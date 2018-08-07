@@ -1,0 +1,37 @@
+---
+title: "Going Down to South Park to Make a Text Analysis using R"
+date: "August 10, 2018"
+output: 
+  html_document: 
+    css: main.css
+    fig_caption: yes
+---
+
+<!--
+Possible article titles:
+Going Down to South Park to Make a Text Analysis using R
+R you ready for South Park?
+5 Things to Learn About South Park by Analysing it
+tags: South Park, learn r, R, text analysis
+-->
+
+![](boys.png)
+
+<!--
+Where and how did I get the data? (Just to introduce it, nothing technical)
+Basic stats about the show - a number of episodes, words, stop words, etc.
+Sentiment analysis of episodes.
+Episode popularity over time.
+-->
+
+## I want to analyse South Park. But where do I start?
+
+## Data acquired. BINGO! Let's dig in.
+
+## Let's dig deeper and get sentimental!
+
+## Episodes, how popular are you?
+
+100 episodes joke - https://en.wikipedia.org/wiki/Cancelled_(South_Park)
+
+## Conclusion
