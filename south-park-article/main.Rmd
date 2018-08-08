@@ -1,11 +1,54 @@
 ---
 title: "Going Down to South Park to Make a Text Analysis using R"
+author: "Patrik Drhlik"
 date: "August 10, 2018"
 output: 
   html_document: 
     css: main.css
     fig_caption: yes
 ---
+
+```{r data_preparation, echo = FALSE, message = FALSE, warning = FALSE}
+# install.packages("tidyverse")
+library(tidyverse)
+# devtools::install_github("pdrhlik/southparkr")
+library(southparkr)
+# install.packages("ggplot2")
+library(ggplot2)
+library(plotly)
+library(glue)
+
+theme_set(theme_classic())
+
+# Drop two columns that would be duplicated
+imdb_ratings <- select(
+	imdb_ratings,
+	-episode_name,
+	-air_date
+)
+
+episode_words <- process_episode_words(episode_lines, imdb_ratings, keep_stopwords = FALSE)
+with_stopwords <- process_episode_words(episode_lines, imdb_ratings, keep_stopwords = TRUE)
+
+by_episode <- group_by(episode_words, episode_name) %>%
+	summarise(
+		mean_sentiment_score = mean(sentiment_score, na.rm = TRUE),
+		rating = user_rating[1],
+		season_episode_number = season_episode_number[1],
+		season_number = season_number[1]
+	) %>%
+	arrange(season_number, season_episode_number) %>%
+	mutate(
+		episode_number = 1:n(),
+		episode_number_str = glue("S{stringr::str_pad(season_number, 2, 'left', pad = '0')}E{stringr::str_pad(season_episode_number, 2, 'left', pad = '0')}"),
+		text_sent = glue("Episode name: {episode_name}
+					Episode number: {episode_number_str}
+					Mean sentiment score: {round(mean_sentiment_score, 2)}"),
+		text_pop = glue("Episode name: {episode_name}
+					Episode number: {episode_number_str}
+					IMDB rating: {rating}")
+	)
+```
 
 <!--
 Possible article titles:
@@ -16,6 +59,8 @@ tags: South Park, learn r, R, text analysis
 -->
 
 ![](boys.png)
+
+
 
 <!--
 Where and how did I get the data? (Just to introduce it, nothing technical)
@@ -30,7 +75,24 @@ Episode popularity over time.
 
 ## Let's dig deeper and get sentimental!
 
+```{r sentiment_analysis, message = FALSE, warning = FALSE}
+gg <- ggplot(by_episode, aes(episode_number, mean_sentiment_score, group = 1, text = text_sent)) +
+	geom_col(color = "#592a88") +
+	geom_smooth()
+
+ggplotly(gg, tooltip = "text")
+```
+
 ## Episodes, how popular are you?
+
+```{r episode_popularity, message = FALSE, warning = FALSE}
+gg<- ggplot(by_episode, aes(episode_number, rating, group = 1, text = text_pop)) +
+	geom_point(color = "#592a88", alpha = 0.6, size = 3) +
+	geom_vline(xintercept = 100, color = "red", linetype = "dashed") +
+	geom_smooth()
+
+ggplotly(gg, tooltip = "text")
+```
 
 100 episodes joke - https://en.wikipedia.org/wiki/Cancelled_(South_Park)
 
