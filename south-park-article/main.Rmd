@@ -1,11 +1,12 @@
 ---
 title: "Going Down to South Park to Make a Text Analysis using R"
 author: "Patrik Drhlik"
-date: "August 10, 2018"
+date: "August 14, 2018"
 output: 
   html_document: 
     css: main.css
     fig_caption: yes
+    keep_md: yes
 ---
 
 ```{r data_preparation, echo = FALSE, message = FALSE, warning = FALSE}
@@ -181,6 +182,6 @@ Funny thing is that the creators themselves made a joke that a **TV show shouldn
 
 ## Conclusion
 
-I have shown you that once you have an idea, nothing is impossible. Answering your own questions usin R is easy. Be curious and do what you like! Even though the overall rating of the show keeps decreasing, I will not stop watching it. I still like it a lot!
+I have shown you that once you have an idea, nothing is impossible. Answering your own questions using R is easy. Be curious and do what you like! Even though the overall rating of the show keeps decreasing, I will not stop watching it. I still like it a lot!
 
 Knowing R is a very valuable skill nowadays. You can start with the basics at [Vertabelo Academy](https://academy.vertabelo.com/). I will personally recommend learning the [Tidyverse](https://academy.vertabelo.com/course/tidyverse). I use it in every analysis and I can't really imagine a woRld without it!
