@@ -60,7 +60,7 @@ tags: South Park, learn r, R, text analysis
 
 ![](boys.png)
 
-
+*[South Park](https://en.wikipedia.org/wiki/South_Park) is an American TV show. It is well known for being very satirical. Pretty much every famous person has already been made fun of in the series. I literally watch it every day! I also do lots of analyses in R every day. I just thought to myself, why haven't I analysed South Park texts yet? And that's when I decided to combine two things I am passionate about. Read on to see how easy it was!*
 
 <!--
 Where and how did I get the data? (Just to introduce it, nothing technical)
@@ -69,11 +69,21 @@ Sentiment analysis of episodes.
 Episode popularity over time.
 -->
 
-## I want to analyse South Park. But where do I start?
+## So I have the idea, but where do I start?
+
+First things first. I had to find a resource with all the text in a reasonable format. It took just a bit of Googling to find a South Park gold mine! I typed South Park scripts into Google and the very first link was exactly what I was looking for! [South Park archives](https://southpark.wikia.com/wiki/Portal:Scripts)–a page with community maintained scripts for all episodes! Isn't that great?
+
+You can find a list of seasons on that page. And after clicking on a season, an episode list comes up. An episode page contains a nice table with two columns. The first column is a character name. And the second column is the actual line that character said. That's a perfect start.
+
+There was one last thing I wanted to know about each episode. Their popularity! I'm sure that you know [IMDB–Internet Movie Database](https://www.imdb.com/). It contains ratings for all movies and Tv shows as well.
+
+But how to put it all together? I wrote a simple R package called [southparkr](https://github.com/pdrhlik/southparkr) that anyone can use and do their own analyses!
 
 ## Data acquired. BINGO! Let's dig in.
 
 ## Let's dig deeper and get sentimental!
+
+https://en.wikipedia.org/wiki/Sentiment_analysis
 
 ```{r sentiment_analysis, message = FALSE, warning = FALSE}
 gg <- ggplot(by_episode, aes(episode_number, mean_sentiment_score, group = 1, text = text_sent)) +
