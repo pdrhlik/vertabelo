@@ -9,7 +9,9 @@ output:
 ---
 
 ```{r data_preparation, echo = FALSE, message = FALSE, warning = FALSE}
+# install.packages("dplyr")
 library(dplyr)
+# install.packages("stringr")
 library(stringr)
 # devtools::install_github("pdrhlik/southparkr")
 library(southparkr)
@@ -17,6 +19,8 @@ library(southparkr)
 library(ggplot2)
 # install.packages("plotly")
 library(plotly)
+# install.packages("kableExtra")
+library(kableExtra)
 
 theme_set(theme_classic())
 
@@ -80,6 +84,55 @@ There was one last thing I wanted to know about each episode. Their popularity! 
 But how to put it all together? I wrote a simple R package called [southparkr](https://github.com/pdrhlik/southparkr) that anyone can use and do their own analyses!
 
 ## Data acquired. BINGO! Let's dig in.
+
+The second step was to determine, what exactly do I want to analyse? I decided on doing two things:
+
+1. Sentiment analysis of episodes,
+2. Episode popularity based on IMDB ratings.
+
+We'll get to that in a minute. We should first have a look at the data we acquired. Have a look at the following table. It summarises all episodes in a few numbers.
+
+```{r summary_table, message = FALSE, warning = FALSE, echo = FALSE}
+best_episode <- filter(by_episode, rating == max(rating))
+worst_episode <- filter(by_episode, rating == min(rating))
+
+basic_stats <- data_frame(
+	text = c(
+		"Number of seasons:",
+		"Number of episodes:",
+		"Number of words:",
+		"No stopwords (a, the, this, ...):",
+		"% used for analysis:",
+		"Average IMDB rating:",
+		str_glue("Best episode ({best_episode$rating}):"),
+		str_glue("Worst episode ({worst_episode$rating}):")
+	),
+	figures = c(
+		max(by_episode$season_number),
+		nrow(by_episode),
+		nrow(with_stopwords),
+		nrow(episode_words),
+		round((nrow(episode_words) / nrow(with_stopwords)) * 100, 2),
+		round(mean(by_episode$rating, na.rm = TRUE), 2),
+		str_glue_data(best_episode, "{episode_name} {episode_number_str}"),
+		str_glue_data(worst_episode, "{episode_name} {episode_number_str}")
+	)
+) %>%
+	mutate(
+		figures = prettyNum(figures, " ")
+	)
+
+stats_table <- kable(basic_stats) %>%
+	kable_styling() %>%
+	column_spec(1, extra_css = "font-weight: bold;")
+
+# Removing a table header
+gsub("<thead>.*</thead>", "", stats_table)
+```
+
+You can see that the show has been on for 21 seasons already. All the characters combined have said almost **1 million words**! That is if we count all words. If we exclude stop words, we end up with about 300 thousand words. Stop words are preposition, articles or other very usual words.
+
+All the episodes sustain an average rating of roughly **8.1** which is great! It seems that the show is popular. I always consider anything above rating 8 very watchable! You can also see the best and the worst episode. So in case you don't know the show, this is where you might start. It is almost guaranteed that you won't be dissapointed.
 
 ## Let's dig deeper and get sentimental!
 
