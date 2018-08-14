@@ -160,6 +160,10 @@ You might also notice a blue line in the plot. It shows a trend in the sentiment
 
 ## Episodes, how popular are you?
 
+That was pretty cool, huh? We can do something very similar with the **episode popularity**. I'll show you a different kind of plot here. Because the ratings can't fall below zero, it is better to use points instead of bars.
+
+The data have been prepared again. The following code produces an interactive plot of South Park episode ratings.
+
 ```{r episode_popularity, message = FALSE, warning = FALSE}
 gg<- ggplot(by_episode, aes(episode_number, rating, group = 1, text = text_pop)) +
 	geom_point(color = "#592a88", alpha = 0.6, size = 3) +
@@ -169,8 +173,14 @@ gg<- ggplot(by_episode, aes(episode_number, rating, group = 1, text = text_pop))
 ggplotly(gg, tooltip = "text")
 ```
 
+Each point represents an episode. If you hover above it, you can see the episode name along with its rating. Can you find the best and the worst episode we talked about earlier? **Give it a try!**
 
+I have also included a trend line. It helps us determine how the popularity develops over time. **Do you see any pattern here?** Take a look at the trend line after the vertical red line. Up to that point, the popularity increases. After that, it keeps falling down.
 
-100 episodes joke - https://en.wikipedia.org/wiki/Cancelled_(South_Park)
+Funny thing is that the creators themselves made a joke that a **TV show shouldn't go past 100 episodes**. It's an episode called [Cancelled](https://en.wikipedia.org/wiki/Cancelled_(South_Park)). It looks like they were right even about their own show. The numbers simply don't lie.
 
 ## Conclusion
+
+I have shown you that once you have an idea, nothing is impossible. Answering your own questions usin R is easy. Be curious and do what you like! Even though the overall rating of the show keeps decreasing, I will not stop watching it. I still like it a lot!
+
+Knowing R is a very valuable skill nowadays. You can start with the basics at [Vertabelo Academy](https://academy.vertabelo.com/). I will personally recommend learning the [Tidyverse](https://academy.vertabelo.com/course/tidyverse). I use it in every analysis and I can't really imagine a woRld without it!
