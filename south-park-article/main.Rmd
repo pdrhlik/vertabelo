@@ -9,14 +9,14 @@ output:
 ---
 
 ```{r data_preparation, echo = FALSE, message = FALSE, warning = FALSE}
-# install.packages("tidyverse")
-library(tidyverse)
+library(dplyr)
+library(stringr)
 # devtools::install_github("pdrhlik/southparkr")
 library(southparkr)
 # install.packages("ggplot2")
 library(ggplot2)
+# install.packages("plotly")
 library(plotly)
-library(glue)
 
 theme_set(theme_classic())
 
@@ -40,11 +40,11 @@ by_episode <- group_by(episode_words, episode_name) %>%
 	arrange(season_number, season_episode_number) %>%
 	mutate(
 		episode_number = 1:n(),
-		episode_number_str = glue("S{stringr::str_pad(season_number, 2, 'left', pad = '0')}E{stringr::str_pad(season_episode_number, 2, 'left', pad = '0')}"),
-		text_sent = glue("Episode name: {episode_name}
+		episode_number_str = str_glue("S{stringr::str_pad(season_number, 2, 'left', pad = '0')}E{stringr::str_pad(season_episode_number, 2, 'left', pad = '0')}"),
+		text_sent = str_glue("Episode name: {episode_name}
 					Episode number: {episode_number_str}
 					Mean sentiment score: {round(mean_sentiment_score, 2)}"),
-		text_pop = glue("Episode name: {episode_name}
+		text_pop = str_glue("Episode name: {episode_name}
 					Episode number: {episode_number_str}
 					IMDB rating: {rating}")
 	)
