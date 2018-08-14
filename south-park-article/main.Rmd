@@ -132,19 +132,31 @@ gsub("<thead>.*</thead>", "", stats_table)
 
 You can see that the show has been on for 21 seasons already. All the characters combined have said almost **1 million words**! That is if we count all words. If we exclude stop words, we end up with about 300 thousand words. Stop words are preposition, articles or other very usual words.
 
-All the episodes sustain an average rating of roughly **8.1** which is great! It seems that the show is popular. I always consider anything above rating 8 very watchable! You can also see the best and the worst episode. So in case you don't know the show, this is where you might start. It is almost guaranteed that you won't be dissapointed.
+All the episodes sustain an average rating of roughly **8.1** which is great! It seems that the show is popular. I always consider anything above rating 8 very watchable! You can also see the best and the worst episode. So in case you don't know the show, this is where you might start. It is almost guaranteed that you won't be disappointed.
 
 ## Let's dig deeper and get sentimental!
 
-https://en.wikipedia.org/wiki/Sentiment_analysis
+We'll tackle the first analysis now. The [sentiment analysis](https://en.wikipedia.org/wiki/Sentiment_analysis) of South Park episodes. It is a type of text analysis that scores words. The scores are *positive* and *negative* and can be expressed by numbers or words. We will be using the [AFINN dictionary](http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010) that scores words from **-5 to 5**. Where -5 is a very negative word, 0 is neutral and +5 is very positive.
+
+For example, a -5 word is a **bastard** and a +5 word is **thrilled**!
+
+All of this has been prepared for you behind the curtain. You will now see a few lines of code in R that show you a sentiment score of all episodes.
 
 ```{r sentiment_analysis, message = FALSE, warning = FALSE}
-gg <- ggplot(by_episode, aes(episode_number, mean_sentiment_score, group = 1, text = text_sent)) +
+gg <- ggplot(by_episode, aes(x = episode_number, y = mean_sentiment_score, group = 1, text = text_sent)) +
 	geom_col(color = "#592a88") +
 	geom_smooth()
 
 ggplotly(gg, tooltip = "text")
 ```
+
+It created an **interactive plot**! You can hover over the bars to see some information. Each bar is an episode–you'll see an episode name, number and the sentiment score upon hovering.
+
+It's just a few lines of code and the result is great! And above all, it is almost like **writing an English sentence**. This is how R programming looks like using the [Tidyverse](https://www.tidyverse.org/) suite of packages.
+
+You can see that most of the episodes have the bar pointing down, below zero. That's mostly because the characters aren't afraid to use **dirty words**. And they do it quite a lot!
+
+You might also notice a blue line in the plot. It shows a trend in the sentiment over time. I can say that there was a large **increase** in the score from the beginning. It peeked roughly around episode 80 and then started **falling** again. You can simply see that the used language changes somehow over time.
 
 ## Episodes, how popular are you?
 
@@ -156,6 +168,8 @@ gg<- ggplot(by_episode, aes(episode_number, rating, group = 1, text = text_pop))
 
 ggplotly(gg, tooltip = "text")
 ```
+
+
 
 100 episodes joke - https://en.wikipedia.org/wiki/Cancelled_(South_Park)
 
