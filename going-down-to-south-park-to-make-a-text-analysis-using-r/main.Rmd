@@ -177,4 +177,4 @@ I have shown you that once you have an idea, nothing is impossible. Answering yo
 
 Knowing R is a very valuable skill nowadays. You can start with the basics at [Vertabelo Academy](https://academy.vertabelo.com/). I will personally recommend learning the [Tidyverse](https://academy.vertabelo.com/course/tidyverse). I use it in every analysis and I can't really imagine a woRld without it!
 
-If you already know R and want to explore the data on your own, check out my [GitHub repository](https://github.com/pdrhlik/vertabelo/going-down-to-south-park-to-make-a-text-analysis-using-r). The page comes with instructions on how to do that. Good luck and enjoy your own analyses!
+If you already know R and want to explore the data on your own, check out my [GitHub repository](https://github.com/pdrhlik/vertabelo/tree/master/going-down-to-south-park-to-make-a-text-analysis-using-r). The page comes with instructions on how to do that. Good luck and enjoy your own analyses!
