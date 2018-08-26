@@ -55,38 +55,25 @@ by_episode <- group_by(episode_words, episode_name) %>%
 	)
 ```
 
-<!--
-Possible article titles:
-Going Down to South Park to Make a Text Analysis using R
-R you ready for South Park?
-5 Things to Learn About South Park by Analysing it
-tags: South Park, learn r, R, text analysis
--->
-
 ![](boys.png)
 
-*[South Park](https://en.wikipedia.org/wiki/South_Park) is an American TV show. It is well known for being very satirical. Pretty much every famous person has already been made fun of in the series. I literally watch it every day! I also do lots of analyses in R every day. I just thought to myself, why haven't I analysed South Park texts yet? And that's when I decided to combine two things I am passionate about. Read on to see how easy it was!*
-
-<!--
-Where and how did I get the data? (Just to introduce it, nothing technical)
-Basic stats about the show - a number of episodes, words, stop words, etc.
-Sentiment analysis of episodes.
-Episode popularity over time.
--->
+*Have you ever liked a TV show so much that watching it wasn’t enough anymore? That you wanted to know things nobody would tell you? Read on and see how I used R to see what’s inside South Park!*
 
 ## So I have the idea, but where do I start?
 
-First things first. I had to find a resource with all the text in a reasonable format. It took just a bit of Googling to find a South Park gold mine! I typed South Park scripts into Google and the very first link was exactly what I was looking for! [South Park archives](https://southpark.wikia.com/wiki/Portal:Scripts)–a page with community maintained scripts for all episodes! Isn't that great?
+[South Park](https://en.wikipedia.org/wiki/South_Park) is an American TV show for adults. It is well known for being very satirical. Pretty much every famous person has already been made fun of in the series. I literally watch it every day! I also do lots of analyses in R every day. I just thought to myself, why haven't I analysed South Park texts yet? What is the overall sentiment of the show? How does the episode popularity evolve over time? Who is the naughtiest character? Or are more naughty episodes also more popular? I’ll answer these and more question in this article series about South Park.
+
+But first things first. I had to find a resource with all the text in a reasonable format. It took just a bit of Googling to find a South Park gold mine! I typed South Park scripts into Google and the very first link was exactly what I was looking for! [South Park archives](https://southpark.wikia.com/wiki/Portal:Scripts)–a page with community maintained scripts for all episodes! Isn't that great?
 
 You can find a list of seasons on that page. And after clicking on a season, an episode list comes up. An episode page contains a nice table with two columns. The first column is a character name. And the second column is the actual line that character said. That's a perfect start.
 
 There was one last thing I wanted to know about each episode. Their popularity! I'm sure that you know [IMDB–Internet Movie Database](https://www.imdb.com/). It contains ratings for all movies and Tv shows as well.
 
-But how to put it all together? I wrote a simple R package called [southparkr](https://github.com/pdrhlik/southparkr) that anyone can use and do their own analyses!
+But how to put it all together? I wrote an R package called [southparkr](https://github.com/pdrhlik/southparkr) that anyone can use and do their own analyses! That package downloads all the information described above and makes it conveniently available. It simply does the hard work for you and allows you to focus on your analyses.
 
 ## Data acquired. BINGO! Let's dig in.
 
-The second step was to determine, what exactly do I want to analyse? I decided on doing two things:
+The second step was to determine, what exactly do I want to analyse? In this article, I decided on doing two things:
 
 1. Sentiment analysis of episodes,
 2. Episode popularity based on IMDB ratings.
@@ -135,9 +122,9 @@ You can see that the show has been on for 21 seasons already. All the characters
 
 All the episodes sustain an average rating of roughly **8.1** which is great! It seems that the show is popular. I always consider anything above rating 8 very watchable! You can also see the best and the worst episode. So in case you don't know the show, this is where you might start. It is almost guaranteed that you won't be disappointed.
 
-## Let's dig deeper and get sentimental!
+## Let's get sentimental, let's get dirty!
 
-We'll tackle the first analysis now. The [sentiment analysis](https://en.wikipedia.org/wiki/Sentiment_analysis) of South Park episodes. It is a type of text analysis that scores words. The scores are *positive* and *negative* and can be expressed by numbers or words. We will be using the [AFINN dictionary](http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010) that scores words from **-5 to 5**. Where -5 is a very negative word, 0 is neutral and +5 is very positive.
+We'll tackle the first analysis now. The sentiment analysis of South Park episodes is a type of text analysis that scores words. The scores are *positive* and *negative* and can be expressed by numbers or words. We will be using the [AFINN dictionary](http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010) that scores words from **-5 to 5**. Where -5 is a very negative word, 0 is neutral and +5 is very positive.
 
 For example, a -5 word is a **bastard** and a +5 word is **thrilled**!
 
@@ -155,9 +142,11 @@ It created an **interactive plot**! You can hover over the bars to see some info
 
 It's just a few lines of code and the result is great! And above all, it is almost like **writing an English sentence**. This is how R programming looks like using the [Tidyverse](https://www.tidyverse.org/) suite of packages.
 
+**[“Intro to Tidyverse” course banner]**
+
 You can see that most of the episodes have the bar pointing down, below zero. That's mostly because the characters aren't afraid to use **dirty words**. And they do it quite a lot!
 
-You might also notice a blue line in the plot. It shows a trend in the sentiment over time. I can say that there was a large **increase** in the score from the beginning. It peeked roughly around episode 80 and then started **falling** again. You can simply see that the used language changes somehow over time.
+You might also notice a blue line in the plot. It shows a trend in the sentiment over time. I can say that there was a large **increase** in the score from the beginning. It peaked roughly around episode 80 and then started **falling** again. You can simply see that the used language changes somehow over time.
 
 ## Episodes, how popular are you?
 
@@ -182,6 +171,10 @@ Funny thing is that the creators themselves made a joke that a **TV show shouldn
 
 ## Conclusion
 
+In this article, you’ve learned that sentiment analysis scores words using a subjective dictionary. You've also seen how to use such information to get an overall fell of the show. We've put it all together to make an interactive plot with just a few lines of R code.
+
 I have shown you that once you have an idea, nothing is impossible. Answering your own questions using R is easy. Be curious and do what you like! Even though the overall rating of the show keeps decreasing, I will not stop watching it. I still like it a lot!
 
 Knowing R is a very valuable skill nowadays. You can start with the basics at [Vertabelo Academy](https://academy.vertabelo.com/). I will personally recommend learning the [Tidyverse](https://academy.vertabelo.com/course/tidyverse). I use it in every analysis and I can't really imagine a woRld without it!
+
+If you already know R and want to explore the data on your own, check out my [GitHub repository](https://github.com/pdrhlik/vertabelo/going-down-to-south-park-to-make-a-text-analysis-using-r). The page comes with instructions on how to do that. Good luck and enjoy your own analyses!
