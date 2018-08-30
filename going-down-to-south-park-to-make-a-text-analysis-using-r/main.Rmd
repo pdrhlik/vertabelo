@@ -173,7 +173,7 @@ Funny thing is that the creators themselves made a joke that a **TV show shouldn
 
 In this article, you’ve learned that sentiment analysis scores words using a subjective dictionary. You've also seen how to use such information to get an overall fell of the show. We've put it all together to make an interactive plot with just a few lines of R code.
 
-I have shown you that once you have an idea, nothing is impossible. Answering your own questions using R is easy. Be curious and do what you like! Even though the overall rating of the show keeps decreasing, I will not stop watching it. I still like it a lot!
+I have shown you that once you have an idea, nothing is impossible. Answering your own questions using R is easy. Be curious and do what you like! Even though the overall rating of the show keeps decreasing, I will not stop watching it. I still like it a lot! The next article in the series will focus on the main characters. You will learn how their individual sentiments evolve apart from other things. Stay tuned to see how they differ from each other!
 
 Knowing R is a very valuable skill nowadays. You can start with the basics at [Vertabelo Academy](https://academy.vertabelo.com/). I will personally recommend learning the [Tidyverse](https://academy.vertabelo.com/course/tidyverse). I use it in every analysis and I can't really imagine a woRld without it!
 
