@@ -1,0 +1,282 @@
+---
+title: "South Park naughty characters"
+author: "Patrik Drhlik"
+date: "October 2, 2018"
+output: 
+  html_document: 
+    css: main.css
+    fig_caption: yes
+    keep_md: yes
+---
+
+```{r knitr_opts, echo = FALSE}
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE
+)
+```
+
+```{r library_load, echo = FALSE, cache = FALSE}
+# Loading libraries used in the analysis
+library(dplyr)
+library(stringr)
+# devtools::install_github("pdrhlik/southparkr")
+library(southparkr)
+# devtools::install_github("pdrhlik/sweary")
+library(sweary)
+library(ggplot2)
+library(plotly)
+library(kableExtra)
+library(SnowballC)
+library(purrr)
+library(glue)
+
+# Set minimal ggplot2 theme for every plot
+theme_set(theme_minimal())
+```
+
+```{r data_preparation, echo = FALSE}
+# Drop two columns that would be duplicated
+imdb_ratings <- select(
+	imdb_ratings,
+	-episode_name,
+	-air_date
+)
+# English swearwords from pdrhlik/sweary
+en_swearwords <- get_swearwords("en")
+# Picked characters for our analysis
+main_characters <- c("butters", "cartman", "kenny", "kyle", "randy", "stan")
+character_colors <- c("#F2F32A", "#ED304C", "#F36904", "#57B749", "#51B4BE", "#4F74B1")
+vertabelo_color <- "#592a88"
+binary_colors <- character_colors[c(6, 2)]
+# All episode words
+episode_words <- process_episode_words(episode_lines, imdb_ratings, keep_stopwords = FALSE) %>%
+	mutate(
+		swear_word = word %in% en_swearwords$word | wordStem(word) %in% wordStem(en_swearwords$word),
+		episode_number_str = str_glue("S{stringr::str_pad(season_number, 2, 'left', pad = '0')}E{stringr::str_pad(season_episode_number, 2, 'left', pad = '0')}"),
+	) %>%
+	filter(!(word %in% c("yeah", "uh", "huh", "hey", "ah")))
+
+# Episode data frame
+by_episode <- group_by(episode_words, episode_name) %>%
+	summarise(
+		mean_sentiment_score = mean(sentiment_score, na.rm = TRUE),
+		rating = user_rating[1],
+		season_episode_number = season_episode_number[1],
+		season_number = season_number[1],
+		episode_number_str = episode_number_str[1],
+		n_characters = length(unique(character)),
+		swear_word_ratio = sum(swear_word) / n()
+	) %>%
+	arrange(season_number, season_episode_number) %>%
+	mutate(
+		episode_number = row_number(),
+		text_char_count = str_glue("Episode name: {episode_name}
+					Episode number: {episode_number_str}
+					Number of characters: {n_characters}"),
+		text_pop = str_glue("Episode name: {episode_name}
+					Episode number: {episode_number_str}
+					IMDB rating: {rating}")
+	)
+
+# Character episode data frame
+by_character_episode <- filter(episode_words, character %in% main_characters) %>%
+	group_by(character, episode_name) %>%
+	summarise(
+		mean_sentiment_score = mean(sentiment_score, na.rm = TRUE),
+		rating = user_rating[1],
+		season_episode_number = season_episode_number[1],
+		season_number = season_number[1],
+		episode_number_str = episode_number_str[1],
+		n_words = n()
+	) %>%
+	arrange(season_number, season_episode_number) %>%
+	mutate(
+		text_sent = str_glue("Episode name: {episode_name}
+					Episode number: {episode_number_str}
+					Mean sentiment score: {round(mean_sentiment_score, 2)}"),
+		text_pop = str_glue("Episode name: {episode_name}
+					Episode number: {episode_number_str}
+					IMDB rating: {rating}")
+	) %>%
+	arrange(season_number, season_episode_number)
+
+# Episode numbers data frame
+full_character_episodes <- select(imdb_ratings, season_number, season_episode_number) %>%
+	arrange(season_number, season_episode_number) %>%
+	filter(season_episode_number > 0, season_number < 22) %>%
+	mutate(episode_number = row_number())
+# Repeated data frame for every main character
+full_character_episodes <- purrr::map_df(seq_len(length(main_characters)), ~full_character_episodes) %>%
+	mutate(
+		character = map(main_characters, rep, 287) %>% unlist
+	)
+
+# Full final list of character episodes.
+# It includes character episode combinations even if a character
+# hasn't appeared in an episode.
+by_character_episode <- left_join(
+	full_character_episodes,
+	by_character_episode,
+	by = c("season_number", "season_episode_number", "character")
+)
+
+# Top 20 speaking characters
+by_character <- episode_words %>%
+	count(character) %>%
+	arrange(desc(n)) %>%
+	top_n(20) %>%
+	mutate(main = character %in% main_characters)
+```
+
+*Teaser intro (2-3 sentences)*
+
+In the [previous article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r/), I've shown you how to use R to analyze South Park dialogs. It was mostly focused on the show in overall. I'll take a closer look at some characters.
+
+## Characters, their counts and speach amount
+
+```{r character_count}
+print(length(unique(episode_words$character)))
+g <- ggplot(by_episode, aes(episode_number, n_characters)) +
+	geom_point(color = vertabelo_color, alpha = 0.6, size = 3) +
+	geom_smooth() +
+	labs(
+		x = "Episode number",
+		y = "Number of characters in an episode"
+	)
+
+ggplotly(g)
+```
+
+- How many characters are there in the show? A lot!
+- But how many of them actually speak a lot?
+
+```{r character_word_count}
+ggplot(by_character, aes(reorder(character, -n), n, fill = main)) +
+	geom_col() +
+	labs(
+		x = "Character",
+		y = "Number of spoken words"
+	) +
+	theme(axis.text.x = element_text(angle = 60, hjust = 1), legend.position = "none") +
+	scale_y_continuous(labels = scales::comma) +
+	scale_fill_manual(values = binary_colors)
+
+```
+
+## Comparing the boys
+
+```{r character_sentiments}
+ggplot(by_character_episode, aes(episode_number, mean_sentiment_score, fill = character)) +
+	geom_col(show.legend = FALSE) +
+	geom_smooth() +
+	facet_wrap(~ character) +
+	labs(
+		x = "Episode number",
+		y = "Mean sentiment score"
+	) +
+	scale_fill_manual(values = character_colors)
+```
+
+```{r character_word_counts}
+ggplot(by_character_episode, aes(episode_number, n_words, fill = character)) +
+	geom_col(show.legend = FALSE) +
+	geom_smooth() +
+	facet_wrap(~ character) +
+	labs(
+		x = "Episode number",
+		y = "Number of spoken words"
+	) +
+	scale_fill_manual(values = character_colors)
+```
+
+```{r top_character_words}
+top_n_character_words <- count(episode_words, character, word) %>%
+	filter(character %in% main_characters) %>%
+	arrange(desc(n)) %>%
+	group_by(character) %>%
+	top_n(10) %>%
+	ungroup() %>%
+	arrange(character, n) %>%
+	# This is needed for proper bar ordering in facets
+	# https://drsimonj.svbtle.com/ordering-categories-within-ggplot2-facets
+	mutate(order = row_number())
+
+ggplot(top_n_character_words, aes(order, n, fill = character)) +
+	geom_col(show.legend = FALSE) +
+	facet_wrap(~ character, scales = "free") +
+	coord_flip() +
+	labs(
+		y = "Number of occurrences",
+		x = "Top 10 most used words by a character"
+	) +
+	scale_x_continuous(
+		breaks = top_n_character_words$order,
+		labels = top_n_character_words$word
+	) +
+	scale_fill_manual(values = character_colors)
+```
+
+- Let's focus on the boys:
+  - how do their sentiments differ
+  - how does the amount of words differ
+  
+## Counting Kenny's deaths
+
+```{r kennys_deaths}
+by_ep <- episode_lines %>%
+	group_by(episode_name) %>%
+	summarise(
+		ep_text = glue_collapse(text)
+	) %>%
+	mutate(kenny_died = str_detect(str_to_lower(ep_text), "killed kenny") | str_detect(str_to_lower(ep_text), "kill kenny"))
+
+sum(by_ep$kenny_died)
+
+# print(by_ep[by_ep$kenny_died, "episode_name"], n = 100)
+```
+
+- How many times do they say: OMG they killed Kenny! You bastards! (So that's a rough counting of Kenny's deaths :-) )
+
+## Are naughtier episodes more popular?
+
+```{r naugthy_popularity}
+ggplot(by_episode, aes(rating, swear_word_ratio)) +
+	geom_point(color = vertabelo_color, alpha = 0.6, size = 3) +
+	geom_smooth() +
+	scale_y_continuous(labels = scales::percent) +
+	scale_x_continuous(breaks = seq(6, 10, 0.5)) +
+	labs(
+		x = "IMDB rating",
+		y = "Episode swear word ratio"
+	)
+```
+
+## Is Eric Cartman the naughtiest character?
+
+```{r eric_naugthiest}
+result <- purrr::map_df(
+	top_n_characters(episode_words, 20),
+	compare_two_characters,
+	"cartman",
+	words = episode_words)
+
+ggplot(result, aes(x = reorder(character, -estimate2), estimate2)) +
+	geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = p.value < 0.05)) +
+	geom_hline(yintercept = 0, col = "red", linetype = "dashed") +
+	labs(
+		x = "Characters",
+		y = "prop.test estimate",
+		title = "Cartman vs other characters (even himself)",
+		subtitle = "Negative values mean that the character is naughtier than Cartman and vice versa"
+	) +
+	ylim(c(-0.4, 0.4)) +
+	# scale_color_manual(values = binary_colors) +
+	theme(
+		axis.text.x = element_text(angle = 60, hjust = 1),
+		legend.position = "none"
+	)
+```
+
+## Conclusion
