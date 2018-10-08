@@ -1,5 +1,5 @@
 ---
-title: "South Park naughty characters"
+title: "South Park Characters - Text Analysis with R"
 author: "Patrik Drhlik"
 date: "October 2, 2018"
 output: 
@@ -13,7 +13,8 @@ output:
 knitr::opts_chunk$set(
 	message = FALSE,
 	warning = FALSE,
-	cache = FALSE
+	cache = TRUE,
+	echo = FALSE
 )
 ```
 
@@ -130,14 +131,17 @@ by_character <- episode_words %>%
 	mutate(main = character %in% main_characters)
 ```
 
-*Teaser intro (2-3 sentences)*
+*Who do you think is the naughtiest character in South Park? You'll know the answer by the end of this article. I'm sure that you will be surprised!*
 
-In the [previous article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r/), I've shown you how to use R to analyze South Park dialogs. It was mostly focused on the show in overall. I'll take a closer look at some characters.
+In the [previous article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r/), I've shown you how to use R to analyze South Park dialogs. It was mostly focused on the show overall. I'll take a closer look at the most famous characters.
 
-## Characters, their counts and speach amount
+## Characters, their counts and speech amount
+
+How many characters are there in the show? Using the data from 287 episodes, we'll see that it's a lot! The number stops at __`r length(unique(episode_words$character))`__! The great majority of these only show up one time though.
+
+Let's first see a plot that will show us how many characters are there in each episode.
 
 ```{r character_count}
-print(length(unique(episode_words$character)))
 g <- ggplot(by_episode, aes(episode_number, n_characters)) +
 	geom_point(color = vertabelo_color, alpha = 0.6, size = 3) +
 	geom_smooth() +
@@ -149,8 +153,9 @@ g <- ggplot(by_episode, aes(episode_number, n_characters)) +
 ggplotly(g)
 ```
 
-- How many characters are there in the show? A lot!
-- But how many of them actually speak a lot?
+It's about 40 characters on average but we can even see some episodes with **60 or more**.
+
+That's all nice but we are really only interested in the top speaking characters. The next plot shows the TOP 20. Each bar represents a total number of spoken words by a character across all episodes. Characters with red bars will be used in more in-depth analyses.
 
 ```{r character_word_count}
 ggplot(by_character, aes(reorder(character, -n), n, fill = main)) +
@@ -165,7 +170,13 @@ ggplot(by_character, aes(reorder(character, -n), n, fill = main)) +
 
 ```
 
-## Comparing the boys
+Do you see anything interesting here? Eric Cartman speaks more than the other two main characters, Stan and Kyle, combined! He is indeed a blabbermouth. Kenny, on the other hand, doesn't speak much. But we all know that, right?
+
+As I said before, we'll be interested in analysing the chosen six characters. The four main boys plus Stan's father Randy and my very favorite - Butters.
+
+## How do our characters differ?
+
+Do you recall what a sentiment analysis is? We analyzed the sentiments of the show in the previous article. As we're focusing on our six brave characters, we'll have a look at how their sentiments differ.
 
 ```{r character_sentiments}
 ggplot(by_character_episode, aes(episode_number, mean_sentiment_score, fill = character)) +
@@ -179,6 +190,12 @@ ggplot(by_character_episode, aes(episode_number, mean_sentiment_score, fill = ch
 	scale_fill_manual(values = character_colors)
 ```
 
+Kyle, Randy and Stan have a quite similar sentiment evolution. Their curves are a bit bumpy sometimes but it's nothing too interesting. Butters, on the other hand, started as a positively tuned person but started getting a bit negative after the second half of the show.
+
+Cartman was by far the most negative character from the beginning. As you can see, it changed in season 20. There are a few episodes with a positive sentiment. He was forced to quit social media and found himself a girlfriend!
+
+Kenny's sentiment trend looks like a rollercoaster! His values go from one extreme to another. That's because he __doesn't talk much__! Take a look at the next plot that proves it!
+
 ```{r character_word_counts}
 ggplot(by_character_episode, aes(episode_number, n_words, fill = character)) +
 	geom_col(show.legend = FALSE) +
@@ -190,6 +207,16 @@ ggplot(by_character_episode, aes(episode_number, n_words, fill = character)) +
 	) +
 	scale_fill_manual(values = character_colors)
 ```
+
+Each bar accounts for the number of spoken words in an episode. You can clearly see that Kenny really doesn't speak much. There are a lot more interesting things going on though. Take a look at Cartman. This plot proves that he really speaks the most.
+
+His trend is also very stable and constant. This can only mean one thing. South Park has always been and still is **heavily depending** on Eric Cartman. He is simply the edgiest character in the show and the creators know it and want to keep it that way. That's what people want.
+
+Stan and Kyle, the other main characters, do have a significant downward trend. I have actually noticed that even before this analysis. These characters are becoming a bit stale.
+
+The winner here is definitely **Randy Marsh**. He's gaining a lot of attention in recent years and I love it! Although he's an adult, he often acts like a kid. And that's simply awesome!
+
+Let's wrap this section up by looking at the most used words by our six chosen ones.
 
 ```{r top_character_words}
 top_n_character_words <- count(episode_words, character, word) %>%
@@ -218,30 +245,21 @@ ggplot(top_n_character_words, aes(order, n, fill = character)) +
 	scale_fill_manual(values = character_colors)
 ```
 
-- Let's focus on the boys:
-  - how do their sentiments differ
-  - how does the amount of words differ
-  
-## Counting Kenny's deaths
+Wow! There's a lot to process here. What do all of them have in common? The four main boys surely use a word **dude** a lot, especially Stan. All of them also say **guys** a lot. Butters says it too. But do you see what he uses more often? That's right, he rather says **fellas** than guys. For some reason, the creators only use it with Butters.
 
-```{r kennys_deaths}
-by_ep <- episode_lines %>%
-	group_by(episode_name) %>%
-	summarise(
-		ep_text = glue_collapse(text)
-	) %>%
-	mutate(kenny_died = str_detect(str_to_lower(ep_text), "killed kenny") | str_detect(str_to_lower(ep_text), "kill kenny"))
+Butters is also very interesting in terms of referring to Cartman. He rarely calls him Cartman. Instead, he calls him by his given name, Eric. That's in contrast with all the other boys.
 
-sum(by_ep$kenny_died)
+Notice how Kyle says Cartman a lot and vice versa. Although being friends, these two always **rip on each other**. Randy, being a good father he is, talks with his son a lot. You can see that there are words like *Stan*, *Stanley* or *son*. All of them referring to one of our main characters.
 
-# print(by_ep[by_ep$kenny_died, "episode_name"], n = 100)
-```
-
-- How many times do they say: OMG they killed Kenny! You bastards! (So that's a rough counting of Kenny's deaths :-) )
+Now brace yourselves. Take a look at Kenny's words. Three out of his ten most used are a form of the F word! He seems to speak pretty **dirty** when he does! But is he naughtier than Cartman? We'll see in a bit.
 
 ## Are naughtier episodes more popular?
 
-```{r naugthy_popularity}
+This is a question I was really wondering about! I just had to label words as swear words. It was easy thanks to my side project called [sweary](https://github.com/pdrhlik/sweary) - a database of swear words across different languages accessible from R.
+
+I was able to determine the percentage of swear words in each episode. I already had popularity ratings for each episode. So, voilà! I created the following simple plot!
+
+```{r naughty_popularity}
 ggplot(by_episode, aes(rating, swear_word_ratio)) +
 	geom_point(color = vertabelo_color, alpha = 0.6, size = 3) +
 	geom_smooth() +
@@ -253,9 +271,25 @@ ggplot(by_episode, aes(rating, swear_word_ratio)) +
 	)
 ```
 
+Could you answer that question without me telling you? Take a thorough look at the plot and read on once you have an idea.
+
+Okay, I'll tell you now. You just have to notice the slope of the blue trend line. It's quite constant. More concretely, it's around 2 percent everywhere. It doesn't really matter if the rating is 7, 8 or 9 out of 10. That means that there is **no relationship** between the proportion of swear words used in an episode and its popularity.
+
+It's nice to see that the show doesn't rely on toilet humour as an uninterested observer might say.
+
+Although there are a few outliers. Especially an episode called [It Hits the Fan](https://en.wikipedia.org/wiki/It_Hits_the_Fan). Almost 15% of all spoken words are naughty! On average, they say a **swear word every 8 seconds**!
+
 ## Is Eric Cartman the naughtiest character?
 
-```{r eric_naugthiest}
+We finally get to my favorite plot! I was quite confident that Eric Cartman must be the naughtiest character. But confidence itself gets you nowhere. You need a **statistical test** to be certain!
+
+There is a perfect statistical test for this exact scenario. It's called a proportional test. The R function conducting this test is called [prop.test](https://www.rdocumentation.org/packages/stats/versions/3.5.1/topics/prop.test).
+
+In simple words, this test compares two fractions and determines if they differ significantly. Our simple fraction looks like this: $\frac{\text{swear words}}{\text{all words}}$. We construct this fraction for Eric Cartman and also for every other character we want to compare with him. Let's say we choose our top 20 speaking characters again.
+
+This test calculates a so called *estimate* and a *confidence interval* for each character pair. The following plot is a graphical representation of our statistical results!
+
+```{r eric_naughtiest}
 result <- purrr::map_df(
 	top_n_characters(episode_words, 20),
 	compare_two_characters,
@@ -271,7 +305,7 @@ ggplot(result, aes(x = reorder(character, -estimate2), estimate2)) +
 		title = "Cartman vs other characters (even himself)",
 		subtitle = "Negative values mean that the character is naughtier than Cartman and vice versa"
 	) +
-	ylim(c(-0.4, 0.4)) +
+	ylim(c(-0.07, 0.04)) +
 	# scale_color_manual(values = binary_colors) +
 	theme(
 		axis.text.x = element_text(angle = 60, hjust = 1),
@@ -279,4 +313,20 @@ ggplot(result, aes(x = reorder(character, -estimate2), estimate2)) +
 	)
 ```
 
-## Conclusion
+If you don't understand what you're looking at, don't worry. I'll explain it to you right away.
+
+Each column contains an **error bar**. These differ in their vertical position, color and spread. The vertical position is the statistical estimate of a character. If the color is blue, it means that the result of this character is **statistically significant**. In more technical words, the [p-value](https://www.dummies.com/education/math/statistics/what-a-p-value-tells-you-about-statistical-data/) of that estimate is less than 0.05. If the spread is narrow, we are more confident about the estimate.
+
+I'll try it again in a human understandable language if you didn't get anything from the paragraph above. If the spread is **wide, the character doesn't speak much**. If the color is red, we **can't say for sure** that Eric Cartman is naughtier than the character. Last but not least, if the vertical position of the bar is above zero, the character **is naughtier** than Cartman.
+
+Using this information, can you confidently say if Eric Cartman is the naughtiest character in South Park? Well, yes you can! If you followed my explanation, you already know that **he is not!**
+
+The naughtiest character in South Park is officially **Kenny McCormick**! The vertical position of his error bar is below zero which suggests that he is the only naughtier character than Cartman. The color of the bar confirms it - it's blue! That means statistically significant! His large spread confirms again that he doesn't speak much. This just means that when he talks, he is as dirty as you can imagine. And most of the time you can really only imagine it because of his mumbling, right?
+
+## Wrap up
+
+This analysis showed that intuition might be easily disproven using simple statistical tests. It's often very easy to do this in R in comparison to other programming languages. Hand on your heart, did you think Kenny was really the naughtiest one? I was surprised.
+
+I didn't show any code in this part of the series as there was quite a lot of it. You can have a look at the source though. It's available on my [GitHub page](https://github.com/pdrhlik/vertabelo/tree/master/south-park-naughty-characters). I'd be happy to help you get started with. Don't be afraid to reach out to me!
+
+Do you have any more specific questions? Just tell me and I'll help you answer them using R.
