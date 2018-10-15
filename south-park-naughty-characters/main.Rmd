@@ -76,9 +76,10 @@ by_episode <- group_by(episode_words, episode_name) %>%
 		text_char_count = str_glue("Episode name: {episode_name}
 					Episode number: {episode_number_str}
 					Number of characters: {n_characters}"),
-		text_pop = str_glue("Episode name: {episode_name}
+		text_swear_word = str_glue("Episode name: {episode_name}
 					Episode number: {episode_number_str}
-					IMDB rating: {rating}")
+					IMDB rating: {rating}
+					Swear word ratio: {round(swear_word_ratio * 10000) / 100}%")
 	)
 
 # Character episode data frame
@@ -91,15 +92,6 @@ by_character_episode <- filter(episode_words, character %in% main_characters) %>
 		season_number = season_number[1],
 		episode_number_str = episode_number_str[1],
 		n_words = n()
-	) %>%
-	arrange(season_number, season_episode_number) %>%
-	mutate(
-		text_sent = str_glue("Episode name: {episode_name}
-					Episode number: {episode_number_str}
-					Mean sentiment score: {round(mean_sentiment_score, 2)}"),
-		text_pop = str_glue("Episode name: {episode_name}
-					Episode number: {episode_number_str}
-					IMDB rating: {rating}")
 	) %>%
 	arrange(season_number, season_episode_number)
 
@@ -143,14 +135,14 @@ Let's first see a plot that will show us how many characters are there in each e
 
 ```{r character_count}
 g <- ggplot(by_episode, aes(episode_number, n_characters)) +
-	geom_point(color = vertabelo_color, alpha = 0.6, size = 3) +
+	geom_point(aes(text = text_char_count), color = vertabelo_color, alpha = 0.6, size = 3) +
 	geom_smooth() +
 	labs(
 		x = "Episode number",
 		y = "Number of characters in an episode"
 	)
 
-ggplotly(g)
+ggplotly(g, tooltip = "text")
 ```
 
 It's about 40 characters on average but we can even see some episodes with **60 or more**.
@@ -260,8 +252,8 @@ This is a question I was really wondering about! I just had to label words as sw
 I was able to determine the percentage of swear words in each episode. I already had popularity ratings for each episode. So, voilà! I created the following simple plot!
 
 ```{r naughty_popularity}
-ggplot(by_episode, aes(rating, swear_word_ratio)) +
-	geom_point(color = vertabelo_color, alpha = 0.6, size = 3) +
+gg <- ggplot(by_episode, aes(rating, swear_word_ratio)) +
+	geom_point(aes(text = text_swear_word), color = vertabelo_color, alpha = 0.6, size = 3) +
 	geom_smooth() +
 	scale_y_continuous(labels = scales::percent) +
 	scale_x_continuous(breaks = seq(6, 10, 0.5)) +
@@ -269,6 +261,8 @@ ggplot(by_episode, aes(rating, swear_word_ratio)) +
 		x = "IMDB rating",
 		y = "Episode swear word ratio"
 	)
+
+ggplotly(gg, tooltip = "text")
 ```
 
 Could you answer that question without me telling you? Take a thorough look at the plot and read on once you have an idea.
