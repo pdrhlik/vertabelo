@@ -125,11 +125,11 @@ by_character <- episode_words %>%
 
 *Who do you think is the naughtiest character in South Park? You'll know the answer by the end of this article. I'm sure that you will be surprised!*
 
-In the [previous article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r/), I've shown you how to use R to analyze South Park dialogs. It was mostly focused on the show overall. I'll take a closer look at the most famous characters.
+In the [previous article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r/), I've shown you how to use R to analyze South Park dialogs. It was mostly focused on the show overall. I'll take a closer look at the most famous characters. We’ll see how much they talk or how do their sentiments change. We’ll also see what words they use most often and if those words are naughty. This will allow us to do a statistical test to decide **who is the naughtiest character in South Park!**
 
 ## Characters, their counts and speech amount
 
-How many characters are there in the show? Using the data from 287 episodes, we'll see that it's a lot! The number stops at __`r length(unique(episode_words$character))`__! The great majority of these only show up one time though.
+How many characters are there in the show? Using the data from 287 episodes, we'll see that it's a lot! The number stops at __`r length(unique(episode_words$character))`__! The great majority of these only show up one time though. All the data is available in my [southparkr](https://github.com/pdrhlik/southparkr) package.
 
 Let's first see a plot that will show us how many characters are there in each episode.
 
@@ -168,7 +168,7 @@ As I said before, we'll be interested in analysing the chosen six characters. Th
 
 ## How do our characters differ?
 
-Do you recall what a sentiment analysis is? We analyzed the sentiments of the show in the previous article. As we're focusing on our six brave characters, we'll have a look at how their sentiments differ.
+Do you [recall what a sentiment analysis is](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r/)? We analyzed the sentiments of the show in the previous article. As we're focusing on our six brave characters, we'll have a look at how their sentiments differ.
 
 ```{r character_sentiments}
 ggplot(by_character_episode, aes(episode_number, mean_sentiment_score, fill = character)) +
@@ -182,7 +182,7 @@ ggplot(by_character_episode, aes(episode_number, mean_sentiment_score, fill = ch
 	scale_fill_manual(values = character_colors)
 ```
 
-Kyle, Randy and Stan have a quite similar sentiment evolution. Their curves are a bit bumpy sometimes but it's nothing too interesting. Butters, on the other hand, started as a positively tuned person but started getting a bit negative after the second half of the show.
+I created a column chart which is great for displaying data with negative values. Kyle, Randy and Stan have a quite similar sentiment evolution. Their curves are a bit bumpy sometimes but it's nothing too interesting. Butters, on the other hand, started as a positively tuned person but started getting a bit negative after the second half of the show.
 
 Cartman was by far the most negative character from the beginning. As you can see, it changed in season 20. There are a few episodes with a positive sentiment. He was forced to quit social media and found himself a girlfriend!
 
@@ -321,6 +321,6 @@ The naughtiest character in South Park is officially **Kenny McCormick**! The ve
 
 This analysis showed that intuition might be easily disproven using simple statistical tests. It's often very easy to do this in R in comparison to other programming languages. Hand on your heart, did you think Kenny was really the naughtiest one? I was surprised.
 
-I didn't show any code in this part of the series as there was quite a lot of it. You can have a look at the source though. It's available on my [GitHub page](https://github.com/pdrhlik/vertabelo/tree/master/south-park-naughty-characters). I'd be happy to help you get started with. Don't be afraid to reach out to me!
+I didn't show any code in this part of the series but you can have a look at the source though. It's available on my [GitHub page](https://github.com/pdrhlik/vertabelo/tree/master/south-park-naughty-characters). I'd be happy to help you get started with. Don't be afraid to reach out to me! You can also check out the [Data Visualization 101](https://academy.vertabelo.com/course/data-visualization-101) course on [Vertabelo Academy](https://academy.vertabelo.com/). You’ll learn how to use the ggplot2 R package that I used to produce plots in this article.
 
-Do you have any more specific questions? Just tell me and I'll help you answer them using R.
+Do you have any specific data question about South Park or their characters? Just tell me in the comment section below and I'll help you answer them using R.
