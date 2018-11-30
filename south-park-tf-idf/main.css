@@ -1,0 +1,42 @@
+.main_content.col-md-12 .blog_single .blog_post_title .title, .blog_post_title .title, h1 {
+    font-size: 40px !important;
+    margin-top: 0;
+    line-height: 1.1;
+    letter-spacing: normal;
+    margin-bottom: 4px;
+    color: #333;
+    font-family: "Open Sans","Helvetica Neue",sans-serif!important;
+    margin: 0.67em 0;
+    font-weight: bold;
+}
+
+.main_content.col-md-12 .blog_single .blog_post_text p, p {
+    margin: 30px 0;
+    font-size: 18px;
+    line-height: 1.7;
+    color: #333333;
+    font-family: "Open Sans","Helvetica Neue",sans-serif;
+}
+
+h2, h3, h4 {
+    padding-top: 0;
+    margin-top: 30px;
+}
+
+h2 {
+	line-height: 1.2;
+}
+
+.figure {
+    width: 140%;
+    margin-left: -20%;
+}
+
+.figure img {
+    width: 100%;
+    height: auto;
+}
+
+.main-container {
+    max-width: 730px !important;
+}

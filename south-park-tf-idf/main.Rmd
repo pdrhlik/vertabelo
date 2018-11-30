@@ -1,0 +1,174 @@
+---
+title: "Going Down to South Park, Part 3: TF-IDF Analysis with R"
+author: "Patrik Drhlik"
+date: "November 27, 2018"
+output: 
+  html_document: 
+    css: main.css
+    fig_caption: yes
+    keep_md: yes
+---
+
+```{r knitr_opts, echo = FALSE}
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	cache = TRUE,
+	echo = FALSE
+)
+```
+
+```{r library_load, echo = FALSE, cache = FALSE}
+# Loading libraries used in the analysis
+library(dplyr)
+library(stringr)
+# devtools::install_github("pdrhlik/southparkr")
+library(southparkr)
+library(ggplot2)
+library(plotly)
+library(kableExtra)
+library(purrr)
+library(glue)
+library(tidytext)
+
+# Set minimal ggplot2 theme for every plot
+theme_set(theme_minimal())
+```
+
+```{r data_preparation}
+# Drop two columns that would be duplicated
+imdb_ratings <- select(
+	imdb_ratings,
+	-episode_name,
+	-air_date
+)
+# Picked characters for our analysis
+main_characters <- c("butters", "cartman", "kenny", "kyle", "randy", "stan")
+character_colors <- c("#F2F32A", "#ED304C", "#F36904", "#57B749", "#51B4BE", "#4F74B1")
+vertabelo_color <- "#592a88"
+binary_colors <- character_colors[c(6, 2)]
+# All episode words
+episode_words <- process_episode_words(episode_lines, imdb_ratings, keep_stopwords = TRUE) %>%
+	mutate(
+		episode_number_str = str_glue("S{stringr::str_pad(season_number, 2, 'left', pad = '0')}E{stringr::str_pad(season_episode_number, 2, 'left', pad = '0')}"),
+	) %>%
+	filter(!(word %in% c("yeah", "uh", "huh", "hey", "ah")))
+
+by_episode <- episode_words %>%
+	group_by(episode_name) %>%
+	summarize(
+		season_number = season_number[1],
+		season_episode_number = season_episode_number[1],
+		episode_number_str = episode_number_str[1],
+		rating = user_rating[1],
+		mean_sentiment_score = mean(sentiment_score, na.rm = TRUE)
+	) %>%
+	arrange(season_number, season_episode_number) %>%
+	mutate(episode_order = 1:n())
+
+episode_words <- left_join(
+	episode_words,
+	select(by_episode, season_number, season_episode_number, episode_order)
+)
+```
+
+In the [second article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r-2/), I showed you how to use R to analyze differences between South Park characters. I proved that Kenny is the naughtiest character, not Eric Cartman as I assumed.
+
+## What is tf-idf
+
+term freqeuncy
+$tf = number\ of\ terms\ in\ a\ document$
+
+inverse document frequency
+$idf = ln(\frac{n_{documents}}{n_{documents\ containing\ term}})$
+
+tf-idf
+$tf\_idf = tf * idf$
+
+```{r season_tf_idf}
+
+season_words <- episode_words %>%
+	count(season_number, word, sort = TRUE)
+
+total_words <- season_words %>%
+	group_by(season_number) %>%
+	summarize(total = sum(n))
+
+season_words <- left_join(season_words, total_words) %>%
+	 bind_tf_idf(word, season_number, n) %>%
+	 arrange(desc(tf_idf))
+
+seasons_tf_idf <- season_words %>%
+	group_by(season_number) %>%
+	summarize(
+		tf_idf = max(tf_idf),
+		word = word[which.max(tf_idf)]
+	)
+```
+
+```{r}
+season_words %>%
+	group_by(season_number) %>%
+	top_n(5, wt = tf_idf) %>%
+	arrange(season_number, desc(tf_idf)) %>%
+	print(n = 200)
+```
+
+```{r episode_tf_idf}
+ep_words <- episode_words %>%
+	count(episode_order, word, sort = TRUE)
+
+ep_total_words <- ep_words %>%
+	group_by(episode_order) %>%
+	summarize(total = sum(n))
+
+ep_words <- left_join(ep_words, ep_total_words) %>%
+	 bind_tf_idf(word, episode_order, n) %>%
+	 arrange(desc(tf_idf))
+
+eps_tf_idf <- ep_words %>%
+	group_by(episode_order) %>%
+	summarize(
+		tf_idf = max(tf_idf),
+		word = word[which.max(tf_idf)]
+	)
+
+a <- ep_words %>%
+	group_by(episode_order) %>%
+	top_n(5, wt = tf_idf) %>%
+	arrange(episode_order, desc(tf_idf))
+```
+
+```{r}
+by_episode <- inner_join(by_episode, eps_tf_idf) %>%
+	mutate(text_hover = str_glue("Episode name: {episode_name}
+					Episode number: {episode_number_str}
+					IMDB rating: {rating}
+					Characteristic word: {word}"))
+g <- ggplot(by_episode, aes(episode_order, rating)) +
+	geom_point(aes(text = text_hover), alpha = 0.6, size = 3, col = vertabelo_color)
+
+ggplotly(g, tooltip = "text")
+```
+
+## Guessing topics of seasons 18, 19 and 20
+
+```{r season_topics_plot}
+ggplot(seasons_tf_idf, aes(season_number, tf_idf, label = word)) +
+	geom_col(fill = vertabelo_color) +
+	geom_text(aes(y = 0), col = "white", hjust = -.05) +
+	scale_x_continuous(breaks = 1:21) +
+	coord_flip() +
+	theme(panel.grid.minor = element_blank())
+```
+
+```{r}
+top_seasons <- by_episode %>%
+	group_by(season_number) %>%
+	summarize(mean_rating = mean(rating)) %>%
+	arrange(desc(mean_rating))
+```
+
+## Characterising topics of top 5 popular episodes
+
+## End of the series
