@@ -125,7 +125,7 @@ Because of that, **tf–idf** will always be 0 for words that appear in every do
 
 Let's do a concrete example with a word **alien**. South Park episodes will be our documents. We will calculate the **term frequency** for each episode in which it appears. Its **inverse document frequency** will be a single number. The following table captures all of these results for each episode where the word **alien** appears.
 
-```{r}
+```{r alien_tf_idf_table}
 alien <- filter(episode_words, word == "alien") %>%
 	count(season_number, season_episode_number) %>%
 	mutate(episode = glue("S{stringr::str_pad(season_number, 2, 'left', pad = '0')}E{stringr::str_pad(season_episode_number, 2, 'left', pad = '0')}")) %>%
@@ -152,8 +152,11 @@ We can see that the episode **S13E06** has the highest **tf–idf** for the word
 
 ## Guessing topics of seasons 18, 19 and 20
 
-```{r season_tf_idf}
+I'd like to dive into analyzing three specific seasons. That's because seasons 18, 19 and 20 each have a plot that evolves throughout the episodes. This is something that the creators have rarely done before. Most of the episodes are stand-alone and don't require too much knowledge of the previous ones.
 
+This is perfect for us because we should be able to use **tf–idf** to reveal what the seasons are about! You can imagine that it wouldn't be to meaningful for seasons where each episode has a different plot, right?
+
+```{r season_tf_idf}
 season_words <- episode_words %>%
 	count(season_number, word, sort = TRUE)
 
@@ -174,12 +177,39 @@ seasons_tf_idf <- season_words %>%
 ```
 
 ```{r}
-# season_words %>%
-# 	group_by(season_number) %>%
-# 	top_n(5, wt = tf_idf) %>%
-# 	arrange(season_number, desc(tf_idf)) %>%
-# 	print(n = 200)
+our_season_words <- season_words %>%
+	filter(season_number %in% c(18, 19, 20)) %>%
+	group_by(season_number) %>%
+	top_n(10, wt = tf_idf) %>%
+	arrange(season_number, desc(tf_idf))
 ```
+
+```{r}
+top_n_season_words <- our_season_words %>%
+	arrange(desc(n)) %>%
+	group_by(season_number) %>%
+	top_n(10) %>%
+	ungroup() %>%
+	arrange(season_number, tf_idf) %>%
+	# This is needed for proper bar ordering in facets
+	# https://drsimonj.svbtle.com/ordering-categories-within-ggplot2-facets
+	mutate(order = row_number())
+
+ggplot(top_n_season_words, aes(order, tf_idf, fill = factor(season_number))) +
+	geom_col(show.legend = FALSE) +
+	facet_wrap(~ season_number, scales = "free") +
+	coord_flip() +
+	labs(
+		y = "tf–idf",
+		x = "Top 10 most significant season topics"
+	) +
+	scale_x_continuous(
+		breaks = top_n_season_words$order,
+		labels = top_n_season_words$word
+	) +
+	scale_fill_manual(values = character_colors[c(2, 4, 6)])
+```
+
 
 ```{r episode_tf_idf}
 ep_words <- episode_words %>%

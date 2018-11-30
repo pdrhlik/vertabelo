@@ -251,8 +251,15 @@ We can see that the episode **S13E06** has the highest **tf–idf** for the word
 
 ## Guessing topics of seasons 18, 19 and 20
 
+I'd like to dive into analyzing three specific seasons. That's because seasons 18, 19 and 20 each have a plot that evolves throughout the episodes. This is something that the creators have rarely done before. Most of the episodes are stand-alone and don't require too much knowledge of the previous ones.
+
+This is perfect for us because we should be able to use **tf–idf** to reveal what the seasons are about! You can imagine that it wouldn't be to meaningful for seasons where each episode has a different plot, right?
 
 
+
+
+
+![](main_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
 
 
 
