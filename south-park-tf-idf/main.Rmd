@@ -57,6 +57,7 @@ episode_words <- process_episode_words(episode_lines, imdb_ratings, keep_stopwor
 by_episode <- episode_words %>%
 	group_by(episode_name) %>%
 	summarize(
+		total_words = n(),
 		season_number = season_number[1],
 		season_episode_number = season_episode_number[1],
 		episode_number_str = episode_number_str[1],
@@ -72,18 +73,84 @@ episode_words <- left_join(
 )
 ```
 
+*Do you think that it is possible to determine what a text document is about? Read on to see how to use R to programatically discover main topics of several South Park seasons and episodes!*
+
 In the [second article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r-2/), I showed you how to use R to analyze differences between South Park characters. I proved that Kenny is the naughtiest character, not Eric Cartman as I assumed.
 
-## What is tf-idf
+In this last article of the series, I'll use a tf–idf analysis to guess episode and season topics. We'll see that it is a very powerful tool that can help us describe what's going on across different documents. We'll be using data from my [southparkr](https://github.com/pdrhlik/southparkr) package again and the wonderful [tidytext](https://github.com/juliasilge/tidytext) package written by Julia Silge and David Robinson.
 
-term freqeuncy
-$tf = number\ of\ terms\ in\ a\ document$
+## So what is tf–idf?
 
-inverse document frequency
-$idf = ln(\frac{n_{documents}}{n_{documents\ containing\ term}})$
+I'll start by introducing the method we'll be using. **tf–idf** stands for **term frequency–inverse document frequency**. [Wikipideia offers](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) a nice explanation: it is a numerical statistic that describes how a word is important in a certain document among a collection of documents.
 
-tf-idf
-$tf\_idf = tf * idf$
+Very common English words like *the*, *a*, *and*, etc. are probably contained in every text. If we were to simply count the number of occurences of words, these would definitely be in the top.
+
+Let's look at the top 10 occuring words in South Park overall to be sure.
+
+```{r most_frequent_words}
+most_freq_words <- episode_words %>%
+	count(word, sort = TRUE) %>%
+	mutate(n = prettyNum(n, " "))
+
+colnames(most_freq_words) <- c("Word", "Number of occurences")
+
+most_freq_words %>%
+	head(10) %>%
+	kable() %>%
+	kable_styling() %>%
+	column_spec(1, extra_css = "font-weight: bold;")
+```
+
+See? We were right. No words with a real meaning here that would tell us what the show is about.
+
+A few examples are in order. Imagine a book author that has written several books. Each of the books will contain specific words to its plot that won't be present in the others. tf–idf will identify these specific words for us.
+
+You will see it later on in action with South Park as well. Each episode clearly contains different dialog lines with different words. tf–idf will reveal the most important words for each episode. Because I know South Park very well, I will personally decide if it did a good job or not.
+
+## But how does it work?
+
+tf–idf penalizes words that appear a lot and in a large number of documents. It's actually a combination of two different metrics as the name suggests. The first one is called **term frequency**:
+
+$$tf = \frac{number\ of\ term\ occurences\ in\ a\ document}{total\ number\ of\ words\ in\ a\ document}$$
+
+Simply put, it's the number of the word occurences in a document. We will use the raw count divided by the total number of words in a document. The second one is called **inverse document frequency**:
+
+$$idf = ln(\frac{n_{documents}}{n_{documents\ containing\ term}})$$
+
+This statistic tells us if the word is rare or very common across the documents. If we have 287 episodes of South Park and all 287 of them contain a word **the**, then **idf** will become $idf = ln(\frac{287}{287})=ln(1)=0$. By combining their product together, we get **tf–idf**:
+
+$$tf\_idf = tf * idf$$
+
+Because of that, **tf–idf** will always be 0 for words that appear in every document.
+
+Let's do a concrete example with a word **alien**. South Park episodes will be our documents. We will calculate the **term frequency** for each episode in which it appears. Its **inverse document frequency** will be a single number. The following table captures all of these results for each episode where the word **alien** appears.
+
+```{r}
+alien <- filter(episode_words, word == "alien") %>%
+	count(season_number, season_episode_number) %>%
+	mutate(episode = glue("S{stringr::str_pad(season_number, 2, 'left', pad = '0')}E{stringr::str_pad(season_episode_number, 2, 'left', pad = '0')}")) %>%
+	select(episode, n_alien = n) %>%
+	left_join(
+		by_episode %>% select(episode_number_str, total_words),
+		by = c("episode" = "episode_number_str")) %>%
+	mutate(
+		tf = n_alien / total_words)
+
+alien <- mutate(
+	alien,
+	idf = log(nrow(by_episode) / nrow(alien)),
+	tf_idf = tf * idf
+)
+
+alien %>%
+	kable() %>%
+	kable_styling() %>%
+	column_spec(1, extra_css = "font-weight: bold;")
+```
+
+We can see that the episode **S13E06** has the highest **tf–idf** for the word alien! It's called *Pinewood Derby* and Randy with his son Stan manage to make the first contact with alien life forms by accidentally discovering warp speed!
+
+## Guessing topics of seasons 18, 19 and 20
 
 ```{r season_tf_idf}
 
@@ -107,11 +174,11 @@ seasons_tf_idf <- season_words %>%
 ```
 
 ```{r}
-season_words %>%
-	group_by(season_number) %>%
-	top_n(5, wt = tf_idf) %>%
-	arrange(season_number, desc(tf_idf)) %>%
-	print(n = 200)
+# season_words %>%
+# 	group_by(season_number) %>%
+# 	top_n(5, wt = tf_idf) %>%
+# 	arrange(season_number, desc(tf_idf)) %>%
+# 	print(n = 200)
 ```
 
 ```{r episode_tf_idf}
@@ -150,8 +217,6 @@ g <- ggplot(by_episode, aes(episode_order, rating)) +
 
 ggplotly(g, tooltip = "text")
 ```
-
-## Guessing topics of seasons 18, 19 and 20
 
 ```{r season_topics_plot}
 ggplot(seasons_tf_idf, aes(season_number, tf_idf, label = word)) +
