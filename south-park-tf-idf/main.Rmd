@@ -156,7 +156,7 @@ I'd like to dive into analyzing three specific seasons. That's because seasons 1
 
 This is perfect for us because we should be able to use **tf–idf** to reveal what the seasons are about! You can imagine that it wouldn't be too meaningful for seasons where each episode has a different plot, right?
 
-Let's examine the most significant words of these seasons in the following bar plot. The **tf–idf** x–axis values are multiplied by a 1000 so that they are more readable.
+Let's examine the most significant words of these seasons in the following bar plot. The **tf–idf** x-axis values are multiplied by 1000 so that they are more readable.
 
 ```{r season_tf_idf}
 season_words <- episode_words %>%
@@ -211,7 +211,7 @@ ggplot(top_n_season_words, aes(order, tf_idf*1000, fill = factor(season_number))
 	theme(panel.grid.minor = element_blank())
 ```
 
-The storyline of [season 18](https://southpark.wikia.com/wiki/Season_Eighteen#Storyline) is focused on Randy Marsh having a musical career and calls himself **Lorde**. That's a number one word on our list, great job! They also make fun of **gluten**-free diets throughout the season. A big focus is also on everything revolving around virtual reality.
+The storyline of [season 18](https://southpark.wikia.com/wiki/Season_Eighteen#Storyline) is focused on Randy Marsh having a musical career and calls himself **Lorde**. That's a number one word on our list, great job! They also make fun of **gluten**-free diets throughout the season. A big focus is also on everything revolving around **virtual** reality.
 
 [Season 19](https://southpark.wikia.com/wiki/Season_Nineteen#Storyline) has even stronger messages. It begins with an announcement that there will be a new principle–**PC Principal**. He starts promoting a **PC** (politically correct) culture because South Park is obviously full of racists and intolerant people. Mr. Garrison doesn't take it anymore and starts running for a president with his running mate **Caitlyn Jenner**, a former decathlon Olympic champion, Bruce Jenner who had a sex change operation. The last important topic of the series are **ads** that negatively influence everything and even start being indistinguishable from regular people.
 
@@ -234,7 +234,9 @@ ggplot(seasons_tf_idf, aes(season_number, tf_idf, label = word)) +
 	theme(panel.grid.minor = element_blank())
 ```
 
-## Characterising topics of top 5 popular episodes
+## What are the 3 most popular episodes about?
+
+I'll do the same plot I did for the three seasons but for the 3 most popular episodes according to IMDB. Because episodes generally have a single main theme, the results should be more accurate. Well, let's find out!
 
 ```{r episode_tf_idf}
 ep_words <- episode_words %>%
@@ -255,11 +257,47 @@ eps_tf_idf <- ep_words %>%
 		word = word[which.max(tf_idf)]
 	)
 
-a <- ep_words %>%
+top_episodes <- ep_words %>%
 	group_by(episode_order) %>%
-	top_n(5, wt = tf_idf) %>%
-	arrange(episode_order, desc(tf_idf))
+	top_n(10, wt = tf_idf) %>%
+	arrange(episode_order, desc(tf_idf)) %>%
+	filter(episode_order %in% c(69, 147, 92))
+
+top_n_episode_words <- top_episodes %>%
+	arrange(desc(n)) %>%
+	group_by(episode_order) %>%
+	top_n(10) %>%
+	ungroup() %>%
+	arrange(episode_order, tf_idf) %>%
+	# This is needed for proper bar ordering in facets
+	# https://drsimonj.svbtle.com/ordering-categories-within-ggplot2-facets
+	mutate(order = row_number())
+
+ggplot(top_n_episode_words, aes(order, tf_idf*100, fill = factor(episode_order, labels = c("Scott Tenorman Must Die", "The Return of the Fellowship of the Ring to the Two Towers", "Make Love, Not Warcraft")))) +
+	geom_col(show.legend = FALSE) +
+	facet_wrap(~ factor(episode_order, labels = c("Scott Tenorman Must Die", "The Return of the\n Fellowship of the Ring \nto the Two Towers", "Make Love, Not Warcraft")), scales = "free") +
+	coord_flip() +
+	labs(
+		y = "tf-idf * 100",
+		x = "Top 10 most significant episode topics"
+	) +
+	scale_x_continuous(
+		breaks = top_n_episode_words$order,
+		labels = top_n_episode_words$word
+	) +
+	scale_fill_manual(values = character_colors[c(2, 4, 6)]) +
+	theme(panel.grid.minor = element_blank())
 ```
+
+I'll try to describe each of the three episodes using a few sentences with its true storyline. **Beware! Spoilers ahead!**
+
+**Scott Tenorman Must Die**: **Scott Tenorman**, a 9th-grader, sells his **pubes** to Eric Cartman. Eric realises later on that he got tricked and wants to get back at Scott. He trains Mr. **Denskins's** **pony** to **bite** off Scott's wiener. Eric ends up having Scott's parents killed and serves them to Scott in a **chilli** con carne on a chilli festival. The episode ends with Scott's favorite band, **Radiohead** coming to the festival and mocking Scott.
+
+**The Return of the Fellowship of the Ring to the Two Towers**: Stan's parents rent a **porno videotape** called **Backdoor** sl\*\*s 9 and **The Lord of the Rings**. The boys are given a **quest** to deliver the LOTR movie to Butters. The two tapes got mixed though and Butters is given the **porno** tape instead.
+
+**Make Love, Not Warcraft**: The boys play World of **Warcraft** but encounter a **player** that is even stronger than the **admins** who starts killing innocent **players**. Their only way to level up to fight the bully **character** is to start killing **computer** generated **boars**. Once they evolve their **characters** enough, their only chance is to use the **sword of the thousand truths** to win the fight!
+
+If you know these episodes, you must agree with these amazing results! Let's end this section with an overview of main topics for each episode. You can explore the results on the following interactive plot. I put the IMDB ratings on the y-axis so that you can only explore the popular episodes if you wanted.
 
 ```{r}
 by_episode <- inner_join(by_episode, eps_tf_idf) %>%
@@ -268,16 +306,21 @@ by_episode <- inner_join(by_episode, eps_tf_idf) %>%
 					IMDB rating: {rating}
 					Characteristic word: {word}"))
 g <- ggplot(by_episode, aes(episode_order, rating)) +
-	geom_point(aes(text = text_hover), alpha = 0.6, size = 3, col = vertabelo_color)
+	geom_point(aes(text = text_hover), alpha = 0.6, size = 3, col = vertabelo_color) +
+	labs(
+		x = "Episode number",
+		y = "IMDB rating"
+	)
 
 ggplotly(g, tooltip = "text")
 ```
 
-```{r}
-top_seasons <- by_episode %>%
-	group_by(season_number) %>%
-	summarize(mean_rating = mean(rating)) %>%
-	arrange(desc(mean_rating))
-```
-
 ## End of the series
+
+This was the last article from the South Park text mining series. You learned how to describe document topics using **tf–idf** analysis. It is a more sophisticated method than just using a raw word count of words that are not stop-words. Mainly because it can penalize words that are common across a set of documents.
+
+All the code that produced this document including the plots can be found on my [Github page](https://github.com/pdrhlik/vertabelo/tree/master/south-park-tf-idf) as usual. You can try to analyze episodes or seasons that you like using the same code.
+
+If you need a bit more practice in R to do that, check out the [Data Visualization 101](https://academy.vertabelo.com/course/data-visualization-101) course on [Vertabelo academy](https://academy.vertabelo.com/). They will show you how to use the **ggplot2** package that I use to produce my plots.
+
+Reach out to me if you would like any help with some of your analyses! Patrik out.
