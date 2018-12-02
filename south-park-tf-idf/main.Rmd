@@ -73,7 +73,7 @@ episode_words <- left_join(
 )
 ```
 
-*Do you think that it is possible to determine what a text document is about? Read on to see how to use R to programatically discover main topics of several South Park seasons and episodes!*
+*Do you think that it is possible to determine what a text document is about? Read on to see how to use R to programmatically discover main topics of several South Park seasons and episodes!*
 
 In the [second article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r-2/), I showed you how to use R to analyze differences between South Park characters. I proved that Kenny is the naughtiest character, not Eric Cartman as I assumed.
 
@@ -81,18 +81,18 @@ In this last article of the series, I'll use a tf–idf analysis to guess episod
 
 ## So what is tf–idf?
 
-I'll start by introducing the method we'll be using. **tf–idf** stands for **term frequency–inverse document frequency**. [Wikipideia offers](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) a nice explanation: it is a numerical statistic that describes how a word is important in a certain document among a collection of documents.
+I'll start by introducing the method we'll be using. **tf–idf** stands for **term frequency–inverse document frequency**. [Wikipedia offers](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) a nice explanation: it is a numerical statistic that describes how a word is important in a certain document among a collection of documents.
 
-Very common English words like *the*, *a*, *and*, etc. are probably contained in every text. If we were to simply count the number of occurences of words, these would definitely be in the top.
+Very common English words like *the*, *a*, *and*, etc. are probably contained in every text. If we were to simply count the number of occurrences of words, these would definitely be in the top.
 
-Let's look at the top 10 occuring words in South Park overall to be sure.
+Let's look at the top 10 occurring words in South Park overall to be sure.
 
 ```{r most_frequent_words}
 most_freq_words <- episode_words %>%
 	count(word, sort = TRUE) %>%
 	mutate(n = prettyNum(n, " "))
 
-colnames(most_freq_words) <- c("Word", "Number of occurences")
+colnames(most_freq_words) <- c("Word", "Number of occurrences")
 
 most_freq_words %>%
 	head(10) %>%
@@ -111,9 +111,9 @@ You will see it later on in action with South Park as well. Each episode clearly
 
 tf–idf penalizes words that appear a lot and in a large number of documents. It's actually a combination of two different metrics as the name suggests. The first one is called **term frequency**:
 
-$$tf = \frac{number\ of\ term\ occurences\ in\ a\ document}{total\ number\ of\ words\ in\ a\ document}$$
+$$tf = \frac{number\ of\ term\ occurrences\ in\ a\ document}{total\ number\ of\ words\ in\ a\ document}$$
 
-Simply put, it's the number of the word occurences in a document. We will use the raw count divided by the total number of words in a document. The second one is called **inverse document frequency**:
+Simply put, it's the number of the word occurrences in a document. We will use the raw count divided by the total number of words in a document. The second one is called **inverse document frequency**:
 
 $$idf = ln(\frac{n_{documents}}{n_{documents\ containing\ term}})$$
 
@@ -154,7 +154,9 @@ We can see that the episode **S13E06** has the highest **tf–idf** for the word
 
 I'd like to dive into analyzing three specific seasons. That's because seasons 18, 19 and 20 each have a plot that evolves throughout the episodes. This is something that the creators have rarely done before. Most of the episodes are stand-alone and don't require too much knowledge of the previous ones.
 
-This is perfect for us because we should be able to use **tf–idf** to reveal what the seasons are about! You can imagine that it wouldn't be to meaningful for seasons where each episode has a different plot, right?
+This is perfect for us because we should be able to use **tf–idf** to reveal what the seasons are about! You can imagine that it wouldn't be too meaningful for seasons where each episode has a different plot, right?
+
+Let's examine the most significant words of these seasons in the following bar plot. The **tf–idf** x–axis values are multiplied by a 1000 so that they are more readable.
 
 ```{r season_tf_idf}
 season_words <- episode_words %>%
@@ -176,15 +178,13 @@ seasons_tf_idf <- season_words %>%
 	)
 ```
 
-```{r}
+```{r seasons_18_19_80}
 our_season_words <- season_words %>%
 	filter(season_number %in% c(18, 19, 20)) %>%
 	group_by(season_number) %>%
 	top_n(10, wt = tf_idf) %>%
 	arrange(season_number, desc(tf_idf))
-```
 
-```{r}
 top_n_season_words <- our_season_words %>%
 	arrange(desc(n)) %>%
 	group_by(season_number) %>%
@@ -195,21 +195,46 @@ top_n_season_words <- our_season_words %>%
 	# https://drsimonj.svbtle.com/ordering-categories-within-ggplot2-facets
 	mutate(order = row_number())
 
-ggplot(top_n_season_words, aes(order, tf_idf, fill = factor(season_number))) +
+ggplot(top_n_season_words, aes(order, tf_idf*1000, fill = factor(season_number))) +
 	geom_col(show.legend = FALSE) +
 	facet_wrap(~ season_number, scales = "free") +
 	coord_flip() +
 	labs(
-		y = "tf–idf",
+		y = "tf-idf * 1000",
 		x = "Top 10 most significant season topics"
 	) +
 	scale_x_continuous(
 		breaks = top_n_season_words$order,
 		labels = top_n_season_words$word
 	) +
-	scale_fill_manual(values = character_colors[c(2, 4, 6)])
+	scale_fill_manual(values = character_colors[c(2, 4, 6)]) +
+	theme(panel.grid.minor = element_blank())
 ```
 
+The storyline of [season 18](https://southpark.wikia.com/wiki/Season_Eighteen#Storyline) is focused on Randy Marsh having a musical career and calls himself **Lorde**. That's a number one word on our list, great job! They also make fun of **gluten**–free diets through out the season. A big focus is also on everything revolving around virtual reality.
+
+[Season 19](https://southpark.wikia.com/wiki/Season_Nineteen#Storyline) has even stronger messages. It begins with an announcement that there will be a new principle–**PC Principal**. He starts promoting a **PC** (politically correct) culture because South Park is obviously full of rasists and intolerant people. Mr. Garrison doesn't take it anymore and starts running for a president with his running mate **Caitlyn Jenner**, a former decathlon olympic champion, Bruce Jenner who had a sex change operation. The last important topic of the series are **ads** that negatively influence everything and even start being indistinguishable from regular people.
+
+In [season 20](https://southpark.wikia.com/wiki/Season_Twenty#Storyline), it was all about **SkankHunt42**, Kyle's dad. He became a **troll** that enjoyed harrassing all sort of people online. It ended up with a **Danish** olympic champion (fictional) Freja Ollegard by killing herself. **Denmark** then created a worldwide service called **trolltrace.com** that was able to identify any **troll** online. Eric Cartman also started dating with Heidi Turner and tried to get to **Mars** with the help of Elon Musk's SpaceX company.
+
+If you compare the bold words with the ones in the bar plot; you'll see that **tf–idf** did a great job with the topic identification! There were also a few words that were picked up but I haven't mentioned them. Those were mostly words that were very significant in a single episode and made it to the top 10 anyway. For example **drones** or **handicar**. Each of these words appeared in a single episode very heavily. But overall, the method did a great job!
+
+For the sake of completeness, take a look at the next bar plot that will show you the most significant topic for each season. Just keep in mind that it doesn't have to be true for the other seasons that we haven't analyzed that closely.
+
+```{r season_topics_plot}
+ggplot(seasons_tf_idf, aes(season_number, tf_idf, label = word)) +
+	geom_col(fill = vertabelo_color) +
+	geom_text(aes(y = 0), col = "white", hjust = -.05) +
+	scale_x_continuous(breaks = 1:21) +
+	labs(
+		x = "Season number",
+		y = "tf-idf"
+	) +
+	coord_flip() +
+	theme(panel.grid.minor = element_blank())
+```
+
+## Characterising topics of top 5 popular episodes
 
 ```{r episode_tf_idf}
 ep_words <- episode_words %>%
@@ -248,22 +273,11 @@ g <- ggplot(by_episode, aes(episode_order, rating)) +
 ggplotly(g, tooltip = "text")
 ```
 
-```{r season_topics_plot}
-ggplot(seasons_tf_idf, aes(season_number, tf_idf, label = word)) +
-	geom_col(fill = vertabelo_color) +
-	geom_text(aes(y = 0), col = "white", hjust = -.05) +
-	scale_x_continuous(breaks = 1:21) +
-	coord_flip() +
-	theme(panel.grid.minor = element_blank())
-```
-
 ```{r}
 top_seasons <- by_episode %>%
 	group_by(season_number) %>%
 	summarize(mean_rating = mean(rating)) %>%
 	arrange(desc(mean_rating))
 ```
-
-## Characterising topics of top 5 popular episodes
 
 ## End of the series
