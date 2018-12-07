@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 	message = FALSE,
 	warning = FALSE,
 	cache = TRUE,
-	echo = FALSE
+	echo = TRUE
 )
 ```
 
@@ -22,7 +22,6 @@ knitr::opts_chunk$set(
 # Loading libraries used in the analysis
 library(dplyr)
 library(stringr)
-# devtools::install_github("pdrhlik/southparkr")
 library(southparkr)
 library(ggplot2)
 library(plotly)
@@ -35,25 +34,35 @@ library(tidytext)
 theme_set(theme_minimal())
 ```
 
-```{r data_preparation}
+```{r imdb_drop_columns, echo = FALSE}
 # Drop two columns that would be duplicated
 imdb_ratings <- select(
 	imdb_ratings,
 	-episode_name,
 	-air_date
 )
-# Picked characters for our analysis
-main_characters <- c("butters", "cartman", "kenny", "kyle", "randy", "stan")
+```
+
+*Do you think that it is possible to determine what a text document is about? Read on to see how to use R to programmatically discover main topics of several South Park seasons and episodes!*
+
+In the [second article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r-2/), I showed you how to use R to analyze differences between South Park characters. I assumed that Eric Cartman is the naughtiest character and proved it right or wrong. Check it out to see the conclusion.
+
+In this last article of the series, you'll find out how to guess episode and season topics. I'll show you a very powerful tool that can help us describe what's going on across different documents. We'll be using data from my [southparkr](https://github.com/pdrhlik/southparkr) package again and the wonderful [tidytext](https://github.com/juliasilge/tidytext) package.
+
+I'll include most of the code used to create all the tables and plots so that you can follow what's going on more easily. I'll start by setting up the data you'll be working with.
+
+```{r data_preparation}
+# Color vectors for use in the plots
 character_colors <- c("#F2F32A", "#ED304C", "#F36904", "#57B749", "#51B4BE", "#4F74B1")
 vertabelo_color <- "#592a88"
-binary_colors <- character_colors[c(6, 2)]
-# All episode words
-episode_words <- process_episode_words(episode_lines, imdb_ratings, keep_stopwords = TRUE) %>%
+
+# Data frame where each row is a word spoken by a charaacter
+episode_words <- southparkr::process_episode_words(episode_lines, imdb_ratings, keep_stopwords = TRUE) %>%
 	mutate(
 		episode_number_str = str_glue("S{stringr::str_pad(season_number, 2, 'left', pad = '0')}E{stringr::str_pad(season_episode_number, 2, 'left', pad = '0')}"),
-	) %>%
-	filter(!(word %in% c("yeah", "uh", "huh", "hey", "ah")))
+	)
 
+# Data frame where each row is an episode summary
 by_episode <- episode_words %>%
 	group_by(episode_name) %>%
 	summarize(
@@ -67,17 +76,12 @@ by_episode <- episode_words %>%
 	arrange(season_number, season_episode_number) %>%
 	mutate(episode_order = 1:n())
 
+# This step is needed to include the episode_order column in the episode_words data frame
 episode_words <- left_join(
 	episode_words,
 	select(by_episode, season_number, season_episode_number, episode_order)
 )
 ```
-
-*Do you think that it is possible to determine what a text document is about? Read on to see how to use R to programmatically discover main topics of several South Park seasons and episodes!*
-
-In the [second article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r-2/), I showed you how to use R to analyze differences between South Park characters. I assumed that Eric Cartman is the naughtiest character and proved it right or wrong. Check it out to see the conclusion.
-
-In this last article of the series, you'll find out how to guess episode and season topics. I'll show you a very powerful tool that can help us describe what's going on across different documents. We'll be using data from my [southparkr](https://github.com/pdrhlik/southparkr) package again and the wonderful [tidytext](https://github.com/juliasilge/tidytext) package.
 
 ## So what is a tf–idf analysis?
 
@@ -88,14 +92,17 @@ Very common English words like *the*, *a*, *and*, etc. are probably contained in
 Let's look at the top 10 occurring words in South Park overall to be sure.
 
 ```{r most_frequent_words}
+# Data frame with the 10 most frequent words in South Park
 most_freq_words <- episode_words %>%
 	count(word, sort = TRUE) %>%
-	mutate(n = prettyNum(n, " "))
+	mutate(n = prettyNum(n, " ")) %>%
+	head(10)
+```
 
+```{r most_frequent_words_table, echo = FALSE}
 colnames(most_freq_words) <- c("Word", "Number of occurrences")
 
 most_freq_words %>%
-	head(10) %>%
 	kable() %>%
 	kable_styling() %>%
 	column_spec(1, extra_css = "font-weight: bold;")
@@ -125,7 +132,8 @@ Because of that, **tf–idf** will always be 0 for words that appear in every do
 
 Let's do a concrete example with a word **alien**. South Park episodes will be our documents. We will calculate the **term frequency** for each episode in which it appears. Its **inverse document frequency** will be a single number. The following table captures all of these results for each episode where the word **alien** appears.
 
-```{r alien_tf_idf_table}
+```{r alien_tf_idf}
+# Data frame of counts of "alien" word occurrences across episodes
 alien <- filter(episode_words, word == "alien") %>%
 	count(season_number, season_episode_number) %>%
 	mutate(episode = glue("S{stringr::str_pad(season_number, 2, 'left', pad = '0')}E{stringr::str_pad(season_episode_number, 2, 'left', pad = '0')}")) %>%
@@ -133,15 +141,20 @@ alien <- filter(episode_words, word == "alien") %>%
 	left_join(
 		by_episode %>% select(episode_number_str, total_words),
 		by = c("episode" = "episode_number_str")) %>%
-	mutate(
-		tf = n_alien / total_words)
+	# Calculating term frequency
+	mutate(tf = n_alien / total_words)
 
+# Wrangling alien to include idf and tf_idf columns
 alien <- mutate(
 	alien,
+	# Calculating inverse document frequency
 	idf = log(nrow(by_episode) / nrow(alien)),
+	# Calculating term frequency–inverse document frequency
 	tf_idf = tf * idf
 )
+```
 
+```{r alien_table, echo = FALSE}
 alien %>%
 	kable() %>%
 	kable_styling() %>%
@@ -158,33 +171,31 @@ This is perfect for us because we should be able to use **tf–idf** to reveal w
 
 Let's examine the most significant words of these seasons in the following bar plot. The **tf–idf** x-axis values are multiplied by 1000 so that they are more readable.
 
-```{r season_tf_idf}
+```{r seasons_18_19_80}
+# Start by counting word occurrences in each season
 season_words <- episode_words %>%
 	count(season_number, word, sort = TRUE)
 
+# Calculate a total number of words for each season
 total_words <- season_words %>%
 	group_by(season_number) %>%
 	summarize(total = sum(n))
 
+# Join both of the data frames and calculate tf-idf for each word in the season
 season_words <- left_join(season_words, total_words) %>%
-	 bind_tf_idf(word, season_number, n) %>%
-	 arrange(desc(tf_idf))
+	# Automatically calculate tf-idf using bind_tf_idf from tidytext
+	bind_tf_idf(word, season_number, n) %>%
+	arrange(desc(tf_idf))
 
-seasons_tf_idf <- season_words %>%
-	group_by(season_number) %>%
-	summarize(
-		tf_idf = max(tf_idf),
-		word = word[which.max(tf_idf)]
-	)
-```
-
-```{r seasons_18_19_80}
+# Filtered data frame with only top 10 tf-idf words from seasons 18, 19 and 20
 our_season_words <- season_words %>%
 	filter(season_number %in% c(18, 19, 20)) %>%
 	group_by(season_number) %>%
 	top_n(10, wt = tf_idf) %>%
 	arrange(season_number, desc(tf_idf))
 
+# This is a slightly modified our_season_words data frame which
+# is needed in order to properly display the following bar plot.
 top_n_season_words <- our_season_words %>%
 	arrange(desc(n)) %>%
 	group_by(season_number) %>%
@@ -195,6 +206,7 @@ top_n_season_words <- our_season_words %>%
 	# https://drsimonj.svbtle.com/ordering-categories-within-ggplot2-facets
 	mutate(order = row_number())
 
+# Code to produce the following bar plot
 ggplot(top_n_season_words, aes(order, tf_idf*1000, fill = factor(season_number))) +
 	geom_col(show.legend = FALSE) +
 	facet_wrap(~ season_number, scales = "free") +
@@ -222,6 +234,15 @@ If you compare the bold words with the ones in the bar plot; you'll see that **t
 For the sake of completeness, take a look at the next bar plot that will show you the most significant topic for each season. Just keep in mind that it doesn't have to be true for the other seasons that we haven't analyzed that closely.
 
 ```{r season_topics_plot}
+# Summary data frame with each row being a top tf-idf word in a season
+seasons_tf_idf <- season_words %>%
+	group_by(season_number) %>%
+	summarize(
+		tf_idf = max(tf_idf),
+		word = word[which.max(tf_idf)]
+	)
+
+# Code to produce the following plot
 ggplot(seasons_tf_idf, aes(season_number, tf_idf, label = word)) +
 	geom_col(fill = vertabelo_color) +
 	geom_text(aes(y = 0), col = "white", hjust = -.05) +
@@ -239,6 +260,11 @@ ggplot(seasons_tf_idf, aes(season_number, tf_idf, label = word)) +
 I'll do the same plot I did for the three seasons but for the 3 most popular episodes according to IMDB. Because episodes generally have a single main theme, the results should be more accurate. Well, let's find out!
 
 ```{r episode_tf_idf}
+# This code block is very similar to the one above that
+# created the top 10 tf-idf words for the three seasons.
+# Instead, it shows the top 10 tf-idf words for 3 most
+# popular South Park episodes.
+
 ep_words <- episode_words %>%
 	count(episode_order, word, sort = TRUE)
 
@@ -299,19 +325,22 @@ I'll try to describe each of the three episodes using a few sentences with its t
 
 If you know these episodes, you must agree with these amazing results! Let's end this section with an overview of main topics for each episode. You can explore the results on the following interactive plot. I put the IMDB ratings on the y-axis so that you can only explore the popular episodes if you wanted.
 
-```{r}
+```{r by_episode_tf-idf}
+# Wrangled by_episode data frame that includes the top tf-idf
+# word for each episode.
 by_episode <- inner_join(by_episode, eps_tf_idf) %>%
 	mutate(text_hover = str_glue("Episode name: {episode_name}
 					Episode number: {episode_number_str}
 					IMDB rating: {rating}
 					Characteristic word: {word}"))
+# Creating the following plot
 g <- ggplot(by_episode, aes(episode_order, rating)) +
 	geom_point(aes(text = text_hover), alpha = 0.6, size = 3, col = vertabelo_color) +
 	labs(
 		x = "Episode number",
 		y = "IMDB rating"
 	)
-
+# Making the following plot interactive
 ggplotly(g, tooltip = "text")
 ```
 
@@ -321,7 +350,7 @@ This was the last article from the South Park text mining series. I showed you w
 
 The last piece of knowledge you gained was how to describe document topics using the **tf–idf** analysis. It is a more sophisticated method than just using a raw word count of words that are not stop-words. Mainly because it can penalize words that are common across a set of documents.
 
-All the code that produced this document including the plots can be found on my [Github page](https://github.com/pdrhlik/vertabelo/tree/master/south-park-tf-idf) as usual. You can try to analyze episodes or seasons that you like using the same code.
+You saw most of the code alongside the text. There are a few bits that I didn't include intentionally. To see all of the code, visit my [Github page](https://github.com/pdrhlik/vertabelo/tree/master/south-park-tf-idf) as usual.
 
 If you need a bit more practice in R to do that, check out the [Data Visualization 101](https://academy.vertabelo.com/course/data-visualization-101) course on [Vertabelo academy](https://academy.vertabelo.com/). They will show you how to use the **ggplot2** package that I use to produce my plots.
 
