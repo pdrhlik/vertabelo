@@ -75,11 +75,11 @@ episode_words <- left_join(
 
 *Do you think that it is possible to determine what a text document is about? Read on to see how to use R to programmatically discover main topics of several South Park seasons and episodes!*
 
-In the [second article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r-2/), I showed you how to use R to analyze differences between South Park characters. I proved that Kenny is the naughtiest character, not Eric Cartman as I assumed.
+In the [second article of the series](https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r-2/), I showed you how to use R to analyze differences between South Park characters. I assumed that Eric Cartman is the naughtiest character and proved it right or wrong. Check it out to see the conclusion.
 
-In this last article of the series, I'll use a tf–idf analysis to guess episode and season topics. We'll see that it is a very powerful tool that can help us describe what's going on across different documents. We'll be using data from my [southparkr](https://github.com/pdrhlik/southparkr) package again and the wonderful [tidytext](https://github.com/juliasilge/tidytext) package written by Julia Silge and David Robinson.
+In this last article of the series, you'll find out how to guess episode and season topics. I'll show you a very powerful tool that can help us describe what's going on across different documents. We'll be using data from my [southparkr](https://github.com/pdrhlik/southparkr) package again and the wonderful [tidytext](https://github.com/juliasilge/tidytext) package.
 
-## So what is tf–idf?
+## So what is a tf–idf analysis?
 
 I'll start by introducing the method we'll be using. **tf–idf** stands for **term frequency–inverse document frequency**. [Wikipedia offers](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) a nice explanation: it is a numerical statistic that describes how a word is important in a certain document among a collection of documents.
 
@@ -317,7 +317,9 @@ ggplotly(g, tooltip = "text")
 
 ## End of the series
 
-This was the last article from the South Park text mining series. You learned how to describe document topics using **tf–idf** analysis. It is a more sophisticated method than just using a raw word count of words that are not stop-words. Mainly because it can penalize words that are common across a set of documents.
+This was the last article from the South Park text mining series. I showed you where to get all the South Park dialogs. You learned how to create a dataset of words from a dataset of spoken lines. This tidy data format helps you make powerful analyses more easily. You used **ggplot2** to create very informative plots, some of them even interactive because of the **plotly** package! You even used a statistical proportion test to compare characters to see who is the naughtiest one.
+
+The last piece of knowledge you gained was how to describe document topics using the **tf–idf** analysis. It is a more sophisticated method than just using a raw word count of words that are not stop-words. Mainly because it can penalize words that are common across a set of documents.
 
 All the code that produced this document including the plots can be found on my [Github page](https://github.com/pdrhlik/vertabelo/tree/master/south-park-tf-idf) as usual. You can try to analyze episodes or seasons that you like using the same code.
 

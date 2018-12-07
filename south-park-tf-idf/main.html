@@ -2115,10 +2115,10 @@ $(document).ready(function () {
 
 
 <p><em>Do you think that it is possible to determine what a text document is about? Read on to see how to use R to programmatically discover main topics of several South Park seasons and episodes!</em></p>
-<p>In the <a href="https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r-2/">second article of the series</a>, I showed you how to use R to analyze differences between South Park characters. I proved that Kenny is the naughtiest character, not Eric Cartman as I assumed.</p>
-<p>In this last article of the series, I’ll use a tf–idf analysis to guess episode and season topics. We’ll see that it is a very powerful tool that can help us describe what’s going on across different documents. We’ll be using data from my <a href="https://github.com/pdrhlik/southparkr">southparkr</a> package again and the wonderful <a href="https://github.com/juliasilge/tidytext">tidytext</a> package written by Julia Silge and David Robinson.</p>
-<div id="so-what-is-tfidf" class="section level2">
-<h2>So what is tf–idf?</h2>
+<p>In the <a href="https://academy.vertabelo.com/blog/south-park-text-data-analysis-with-r-2/">second article of the series</a>, I showed you how to use R to analyze differences between South Park characters. I assumed that Eric Cartman is the naughtiest character and proved it right or wrong. Check it out to see the conclusion.</p>
+<p>In this last article of the series, you’ll find out how to guess episode and season topics. I’ll show you a very powerful tool that can help us describe what’s going on across different documents. We’ll be using data from my <a href="https://github.com/pdrhlik/southparkr">southparkr</a> package again and the wonderful <a href="https://github.com/juliasilge/tidytext">tidytext</a> package.</p>
+<div id="so-what-is-a-tfidf-analysis" class="section level2">
+<h2>So what is a tf–idf analysis?</h2>
 <p>I’ll start by introducing the method we’ll be using. <strong>tf–idf</strong> stands for <strong>term frequency–inverse document frequency</strong>. <a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf">Wikipedia offers</a> a nice explanation: it is a numerical statistic that describes how a word is important in a certain document among a collection of documents.</p>
 <p>Very common English words like <em>the</em>, <em>a</em>, <em>and</em>, etc. are probably contained in every text. If we were to simply count the number of occurrences of words, these would definitely be in the top.</p>
 <p>Let’s look at the top 10 occurring words in South Park overall to be sure.</p>
@@ -2605,7 +2605,8 @@ S20E01
 </div>
 <div id="end-of-the-series" class="section level2">
 <h2>End of the series</h2>
-<p>This was the last article from the South Park text mining series. You learned how to describe document topics using <strong>tf–idf</strong> analysis. It is a more sophisticated method than just using a raw word count of words that are not stop-words. Mainly because it can penalize words that are common across a set of documents.</p>
+<p>This was the last article from the South Park text mining series. I showed you where to get all the South Park dialogs. You learned how to create a dataset of words from a dataset of spoken lines. This tidy data format helps you make powerful analyses more easily. You used <strong>ggplot2</strong> to create very informative plots, some of them even interactive because of the <strong>plotly</strong> package! You even used a statistical proportion test to compare characters to see who is the naughtiest one.</p>
+<p>The last piece of knowledge you gained was how to describe document topics using the <strong>tf–idf</strong> analysis. It is a more sophisticated method than just using a raw word count of words that are not stop-words. Mainly because it can penalize words that are common across a set of documents.</p>
 <p>All the code that produced this document including the plots can be found on my <a href="https://github.com/pdrhlik/vertabelo/tree/master/south-park-tf-idf">Github page</a> as usual. You can try to analyze episodes or seasons that you like using the same code.</p>
 <p>If you need a bit more practice in R to do that, check out the <a href="https://academy.vertabelo.com/course/data-visualization-101">Data Visualization 101</a> course on <a href="https://academy.vertabelo.com/">Vertabelo academy</a>. They will show you how to use the <strong>ggplot2</strong> package that I use to produce my plots.</p>
 <p>Reach out to me if you would like any help with some of your analyses! Patrik out.</p>
