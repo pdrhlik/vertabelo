@@ -1,0 +1,574 @@
+---
+title: "Using the power of R to query an SQL database"
+author: "Patrik Drhlik"
+output:
+  html_document: 
+    css: main.css
+    fig_caption: yes
+    keep_md: yes
+    pandoc_args: ["+RTS", "-K1024m", "-RTS"]
+---
+
+
+
+
+
+*How do you visualize results from SQL queries? You usually need to use multiple tools to achieve that. Why not use a tool that communicates with SQL directly and is able to do any data analysis task at once? Let me show you how R can be of help here.*
+
+# How does it work?
+
+R is a data-oriented programming language that uses packages (libraries) to solve almost every data analysis task and more. Some of these packages can let R connect to SQL databases, query them and then seamlesly perform any action. Using just R.
+
+We'll use a PostgreSQL database with two tables from the [Vertabelo SQL Basics course](https://academy.vertabelo.com/course/sql-queries). The two tables will be from a section called [How to query more than one table](https://academy.vertabelo.com/course/sql-queries/multiple-tables/multiple-tables/introduction). The tables are called `movie` and `director`. As the names suggest, the first table contains information about a few movies and IDs of their directors. These correspond to the IDs of a director in the second table.
+
+I'll show you how to use the `tidyverse` suite of packages in R to connect to a database. We will execute a couple of queries, get the data into R and finish it with a visualization. Each of the query sections will contain the SQL query and the equivalent R code that produces the same result.
+
+# Connecting to a database
+
+The first thing to do when communicating with the database from R is the connection. We need to create a connection object that we'll use in the following queries. It's simply done using the `dbConnect()` function from the `DBI` package. We need to provide a couple of parameters. The first one is a function that defines a database driver. Each database system uses a different one. PostgreSQL works with the so-called `ODBC API` (Open Database Connectivity standard).
+
+The last important parameter is the **connection string**. It defines the address of the database server, username, password and the database name that we're trying to connect to. The other parameters are optional.
+
+We will be using the `dplyr` syntax to query the database from R. It's a very popular R package that handles tons of data wrangling tasks and can even communicate with database backends. The best thing about this is that the syntax stays completely the same. It doesn't matter if you are wrangling data frames (R's data format similar to tables) or SQL tables.
+
+You can see how I create a connection object to my database and store it in a variable `con` below. I also create two connection objects to the `movie` and `director` tables and call the variables `movie_tbl` and `director_tbl` respectively. `tbl()` is a `dplyr` function that takes a connection object as the first parameter and the table name as the second.
+
+Take a look at the code.
+
+
+```r
+# database connection object
+con <- dbConnect(
+	odbc::odbc(),
+	.connection_string = "
+		Driver={PostgreSQL ANSI(x64)};
+		Server=127.0.0.1;
+		Uid=postgres;
+		Pwd=postgres;
+		Database=vertabelo;",
+	timeout = 10,
+	encoding = "windows-1252")
+
+# movie table connection object
+movie_tbl <- tbl(con, "movie")
+
+# director table connection object
+director_tbl <- tbl(con, "director")
+```
+
+You only have to do the connection part once. After that, you can just enjoy querying the database and getting the answers you desire. Let's go now, step by step, from the simplest query to more complicating ones that combine multiple tables. We'll finish that with a visualization and we will only stick with R the whole time.
+
+## Selecting all data from a table
+
+I said that we'll start simple. Every section will have an SQL code on the left and the R code on the right. I will also show you a table with the results from each step.
+
+The simplest SQL query would be to select everything from one table. Let's do it then!
+
+<div class="row">
+<div class="col-md-6">
+<h3>SQL</h3>
+	SELECT * FROM movie
+</div>
+<div class="col-md-6">
+<h3>R</h3>
+	movie_tbl
+</div>
+</div>
+
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+ <thead>
+  <tr>
+   <th style="text-align:right;"> id </th>
+   <th style="text-align:left;"> name </th>
+   <th style="text-align:right;"> year </th>
+   <th style="text-align:right;"> director_id </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> Psycho </td>
+   <td style="text-align:right;"> 1960 </td>
+   <td style="text-align:right;"> 1 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Saving Private Ryan </td>
+   <td style="text-align:right;"> 1998 </td>
+   <td style="text-align:right;"> 2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> Schindler's List </td>
+   <td style="text-align:right;"> 1993 </td>
+   <td style="text-align:right;"> 2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> Midnight in Paris </td>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 3 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> Sweet and Lowdown </td>
+   <td style="text-align:right;"> 1993 </td>
+   <td style="text-align:right;"> 3 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:left;"> Pulp fiction </td>
+   <td style="text-align:right;"> 1994 </td>
+   <td style="text-align:right;"> 4 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 7 </td>
+   <td style="text-align:left;"> Talk to her </td>
+   <td style="text-align:right;"> 2002 </td>
+   <td style="text-align:right;"> 5 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 8 </td>
+   <td style="text-align:left;"> The skin I live in </td>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 5 </td>
+  </tr>
+</tbody>
+</table>
+
+Have you noticed that we just simply wrote the variable name `movie_tbl` to query the database? The connection itself automatically creates a query to return every column of a database.
+
+This can be further adjusted as we will see right away.
+
+Calling the variable just prepares the query but **doesn't execute it yet!** It will just return a few preview rows. That's because we can still modify it. If we want to execute it and get all the data, we must call a function called `collect()`.
+
+## Selecting specified columns
+
+Let's incrementally make the query more difficult. I want to show you all the basic SQL keywords and their R equivalents. Here comes the R `select()` function. It allows us to specify what columns we actually want. In SQL, you just replace the asterisk by the column names.
+
+We'll only select the `name` and `year` columns from the `movie` table here.
+
+<div class="row">
+<div class="col-md-6">
+<h3>SQL</h3>
+	SELECT name, year
+	FROM movie
+</div>
+<div class="col-md-6">
+<h3>R</h3>
+	movie_tbl %>%
+		select(name, year)
+</div>
+</div>
+
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+ <thead>
+  <tr>
+   <th style="text-align:left;"> name </th>
+   <th style="text-align:right;"> year </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Psycho </td>
+   <td style="text-align:right;"> 1960 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Saving Private Ryan </td>
+   <td style="text-align:right;"> 1998 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Schindler's List </td>
+   <td style="text-align:right;"> 1993 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Midnight in Paris </td>
+   <td style="text-align:right;"> 2011 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Sweet and Lowdown </td>
+   <td style="text-align:right;"> 1993 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Pulp fiction </td>
+   <td style="text-align:right;"> 1994 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Talk to her </td>
+   <td style="text-align:right;"> 2002 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> The skin I live in </td>
+   <td style="text-align:right;"> 2011 </td>
+  </tr>
+</tbody>
+</table>
+
+The R code literally says to connect to a `movie` table and to select columns with names `name` and `year`. That's basically an English sentence, right?
+
+The awkward thing you might have noticed is the so-called **pipe operator** `%>%`. It simplifies the code and makes it more readable. The pipe helps us maintain a logical flow. It should become more obvious when we add more pipes later.
+
+## Filtering selected data
+
+Selecting the desired columns is a good start. But we might have a lot of rows in our database but we might only be interested in a certain subset.
+
+What if we only want to see movies that were made after the year 1993?
+
+<div class="row">
+<div class="col-md-6">
+<h3>SQL</h3>
+	SELECT name, year
+	FROM movie
+	WHERE year > 1993
+</div>
+<div class="col-md-6">
+<h3>R</h3>
+	movie_tbl %>%
+		select(name, year) %>%
+		filter(year > 1993)
+</div>
+</div>
+
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+ <thead>
+  <tr>
+   <th style="text-align:left;"> name </th>
+   <th style="text-align:right;"> year </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Saving Private Ryan </td>
+   <td style="text-align:right;"> 1998 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Midnight in Paris </td>
+   <td style="text-align:right;"> 2011 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Pulp fiction </td>
+   <td style="text-align:right;"> 1994 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Talk to her </td>
+   <td style="text-align:right;"> 2002 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> The skin I live in </td>
+   <td style="text-align:right;"> 2011 </td>
+  </tr>
+</tbody>
+</table>
+
+In SQL, you would simply do this with the `WHERE` keyword and the condition you want to meet. In R, we pipe our previous query to a `filter()` function. The condition specification is the same, only the keyword changes.
+
+## Arranging selected data
+
+Now that we only have the newer movies from our table, we might want to ensure that they sorted in a way that we want.
+
+<div class="row">
+<div class="col-md-6">
+<h3>SQL</h3>
+	SELECT name, year
+	FROM movie
+	WHERE year > 1993
+	ORDER BY year
+</div>
+<div class="col-md-6">
+<h3>R</h3>
+	movie_tbl %>%
+		select(name, year) %>%
+		filter(year > 1993) %>%
+		arrange(year)
+</div>
+</div>
+
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+ <thead>
+  <tr>
+   <th style="text-align:left;"> name </th>
+   <th style="text-align:right;"> year </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Pulp fiction </td>
+   <td style="text-align:right;"> 1994 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Saving Private Ryan </td>
+   <td style="text-align:right;"> 1998 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Talk to her </td>
+   <td style="text-align:right;"> 2002 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Midnight in Paris </td>
+   <td style="text-align:right;"> 2011 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> The skin I live in </td>
+   <td style="text-align:right;"> 2011 </td>
+  </tr>
+</tbody>
+</table>
+
+We arranged the movies by `year`. SQL offers us an `ORDER BY` construct followed by a column name (or multiple column names) to achieve this. R isn't that different. It just uses different keywords. In R, we `arrange()` tables and we specify the column names as function arguments. See how we used the code from the previous part but just added the **pipe** `%>%` to arrange it?
+
+## Joining two tables
+
+One single table rarely contains enough information to do a proper analysis. We now that each of our movies has a `director_id`. But that doesn't tell us much. It would be a lot more informative to see the names of the movie directors. Or even some more columns.
+
+Let's join these two tables to see who directed what. We'll be using a `LEFT JOIN` just in case the movie doesn't have a `director_id` column filled (all of them do though).
+
+<div class="row">
+<div class="col-md-6">
+<h3>SQL</h3>
+	SELECT movie.*,
+	       director.name AS director_name
+	FROM movie
+	LEFT JOIN director
+	ON (movie.director_id = director.id)
+</div>
+<div class="col-md-6">
+<h3>R</h3>
+	movie_tbl %>%
+		left_join(director_tbl,
+		by = c("director_id" = "id")) %>%
+		rename(director_name = name.y)
+</div>
+</div>
+
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+ <thead>
+  <tr>
+   <th style="text-align:right;"> id </th>
+   <th style="text-align:left;"> name.x </th>
+   <th style="text-align:right;"> year </th>
+   <th style="text-align:right;"> director_id </th>
+   <th style="text-align:left;"> director_name </th>
+   <th style="text-align:right;"> birth_year </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> Psycho </td>
+   <td style="text-align:right;"> 1960 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> Alfred Hitchcock </td>
+   <td style="text-align:right;"> 1899 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Saving Private Ryan </td>
+   <td style="text-align:right;"> 1998 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Steven Spielberg </td>
+   <td style="text-align:right;"> 1946 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> Schindler's List </td>
+   <td style="text-align:right;"> 1993 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Steven Spielberg </td>
+   <td style="text-align:right;"> 1946 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> Midnight in Paris </td>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> Woody Allen </td>
+   <td style="text-align:right;"> 1935 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> Sweet and Lowdown </td>
+   <td style="text-align:right;"> 1993 </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> Woody Allen </td>
+   <td style="text-align:right;"> 1935 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:left;"> Pulp fiction </td>
+   <td style="text-align:right;"> 1994 </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> Quentin Tarantino </td>
+   <td style="text-align:right;"> 1963 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 7 </td>
+   <td style="text-align:left;"> Talk to her </td>
+   <td style="text-align:right;"> 2002 </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> Pedro Almodóvar </td>
+   <td style="text-align:right;"> 1949 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 8 </td>
+   <td style="text-align:left;"> The skin I live in </td>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> Pedro Almodóvar </td>
+   <td style="text-align:right;"> 1949 </td>
+  </tr>
+</tbody>
+</table>
+
+To each of our movies, we `LEFT JOIN` a director just in case it's empty. We specify the columns we want to join the tables on in the `ON` statement. The R code is very similar again. We take the `movie` table and pipe it to the `left_join()` function with a `director` table as the first argument. Instead of the `ON` statement in SQL, we fill in the `by` parameter to join the tables.
+
+We also do a little bit of renaming here using the `rename()` function. That's because both of our tables have a `name` column. R automatically suffixes the column names with `.x` and `.y` and still executes the query. SQL might complain about ambiguous column names. We know that the `name.y` column is actually the name of the director so we rename it to `director_name`.
+
+## Creating a new column
+
+There are often times when you need to create new columns on the fly. That usually happens when you don't want to create columns for data that can be easily computed.
+
+We have such a case here. What if we would like to know how old each of the directors was when they created the movie?
+
+<div class="row">
+<div class="col-md-6">
+<h3>SQL</h3>
+	SELECT movie.*,
+	       director.name AS director_name,
+	       (movie.year - director.birth_year) AS director_age
+	FROM movie
+	LEFT JOIN director
+	ON (movie.director_id = director.id)
+</div>
+<div class="col-md-6">
+<h3>R</h3>
+	movie_tbl %>%
+		left_join(director_tbl,
+		by = c("director_id" = "id")) %>%
+		rename(director_name = name.y) %>%
+		mutate(director_age = year - birth_year)
+</div>
+</div>
+
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+ <thead>
+  <tr>
+   <th style="text-align:right;"> id </th>
+   <th style="text-align:left;"> name.x </th>
+   <th style="text-align:right;"> year </th>
+   <th style="text-align:right;"> director_id </th>
+   <th style="text-align:left;"> director_name </th>
+   <th style="text-align:right;"> birth_year </th>
+   <th style="text-align:right;"> director_age </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> Psycho </td>
+   <td style="text-align:right;"> 1960 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> Alfred Hitchcock </td>
+   <td style="text-align:right;"> 1899 </td>
+   <td style="text-align:right;"> 61 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Saving Private Ryan </td>
+   <td style="text-align:right;"> 1998 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Steven Spielberg </td>
+   <td style="text-align:right;"> 1946 </td>
+   <td style="text-align:right;"> 52 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> Schindler's List </td>
+   <td style="text-align:right;"> 1993 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Steven Spielberg </td>
+   <td style="text-align:right;"> 1946 </td>
+   <td style="text-align:right;"> 47 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> Midnight in Paris </td>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> Woody Allen </td>
+   <td style="text-align:right;"> 1935 </td>
+   <td style="text-align:right;"> 76 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> Sweet and Lowdown </td>
+   <td style="text-align:right;"> 1993 </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> Woody Allen </td>
+   <td style="text-align:right;"> 1935 </td>
+   <td style="text-align:right;"> 58 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:left;"> Pulp fiction </td>
+   <td style="text-align:right;"> 1994 </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> Quentin Tarantino </td>
+   <td style="text-align:right;"> 1963 </td>
+   <td style="text-align:right;"> 31 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 7 </td>
+   <td style="text-align:left;"> Talk to her </td>
+   <td style="text-align:right;"> 2002 </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> Pedro Almodóvar </td>
+   <td style="text-align:right;"> 1949 </td>
+   <td style="text-align:right;"> 53 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 8 </td>
+   <td style="text-align:left;"> The skin I live in </td>
+   <td style="text-align:right;"> 2011 </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> Pedro Almodóvar </td>
+   <td style="text-align:right;"> 1949 </td>
+   <td style="text-align:right;"> 62 </td>
+  </tr>
+</tbody>
+</table>
+
+We need to join the tables again of course. In SQL, we need to create a new column in a select statement. We called it `director_age` and it's a difference between the movie's release year and the director's birth year.
+
+R introduces us one more important word here – `mutate()`. The `mutate()` function creates one or more new columns based on other columns in the selected data. Creating new columns in R is way more straightforward in my opinion. You just need to pipe the query into the function again.
+
+For the last section, imagine that we stored the above R code into a variable called `directors`. We'll use it to create a simple visualization.
+
+## Quick visualizations
+
+After you select and wrangle all the data you need, the best way to understand that data is often to visualize them. I'll show you how to create a histogram of director ages. Bear in mind that the datasets are small so the plot might not be very helpful or appealing as it would be if it contained thousands of records.
+
+
+```r
+ggplot(directors, aes(director_age)) +
+	geom_histogram(binwidth = 20, fill = "#592a88") +
+	labs(
+		title = "Histogram of director's ages",
+		x = "Director age",
+		y = "Count"
+	)
+```
+
+![](main_files/figure-html/director_age_hist-1.png)<!-- -->
+
+We can see the rough age distribution here in the histogram. As soon as we get the data ready, we can start visualizing right away. We don't need to export anything anywhere. We don't need to use a different tool. R provides it all.
+
+# Summary
+
+I showed you how simple SQL `SELECT` queries translate to R code and vice versa. They are both similar in the way that the commands resemble an English sentence which makes the whole query process very smooth.
+
+I especially wanted to emphasize that once you get the data ready, you can start doing powerful analyses and/or visualizations at once. If you really are interested in learning R, take a look at any of the Vertable R courses. My bet would be on the [Tidyverse course](https://academy.vertabelo.com/course/tidyverse) though. I use it everyday and I can't imagine doing work without these amazing tools.
+
+If you want to play with the code from this article yourself, take a look at my [GitHub repo](https://github.com/pdrhlik/vertabelo) and feel free to play with it.
+
+Thanks for reading!
+
